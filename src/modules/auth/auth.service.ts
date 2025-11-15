@@ -1,0 +1,83 @@
+import { eq } from 'drizzle-orm';
+import { db } from '../../db/data-source';
+import { user } from '../../db/schema/users';
+import bcrypt from 'bcrypt';
+
+export const hashPassword = async (password: string): Promise<string> => {
+    try {
+        return await bcrypt.hash(password, 10);
+    } catch (e) {
+        throw new Error('Error hashing');
+    }
+}
+
+export const comparePassword = async (password: string, hashedPassword: string): Promise<boolean> => {
+  try {
+    return await bcrypt.compare(password, hashedPassword);
+  } catch (e) {
+    throw new Error('Error comparing password');
+  }
+};
+
+export const createUser = async ({ name, email, password, role = 'admin' } : { name: string; email: string; password: string; role?: 'admin' | 'superadmin' }) => {
+  try {
+    const existingUser = await db
+      .select()
+      .from(user)
+      .where(eq(user.email, email))
+      .limit(1);
+
+    if (existingUser.length > 0)
+      throw new Error('User with this email already exists');
+
+    const password_hash = await hashPassword(password);
+
+    const [newUser] = await db
+      .insert(user)
+      .values({ name, email, password: password_hash, role: role as 'admin' | 'superadmin' })
+      .returning({
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        createdAt: user.createdAt,
+      });
+
+    return newUser;
+  } catch (e) {
+    throw e;
+  }
+};
+
+export const authenticateUser = async ({ email, password } : { email: string; password: string }) => {
+  try {
+    const [existingUser] = await db
+      .select()
+      .from(user)
+      .where(eq(user.email, email))
+      .limit(1);
+
+    if (!existingUser) {
+      throw new Error('User not found');
+    }
+
+    const isPasswordValid = await comparePassword(
+      password,
+      existingUser.password
+    );
+
+    if (!isPasswordValid) {
+      throw new Error('Invalid password');
+    }
+
+    return {
+      id: existingUser.id,
+      name: existingUser.name,
+      email: existingUser.email,
+      role: existingUser.role,
+      createdAt: existingUser.createdAt,
+    };
+  } catch (e) {
+    throw e;
+  }
+};
