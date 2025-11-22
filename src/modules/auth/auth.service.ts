@@ -34,7 +34,7 @@ export const createUser = async ({ name, email, password, role = 'admin' } : { n
 
     const [newUser] = await db
       .insert(user)
-      .values({ name, email, password: password_hash, role: role as 'admin' | 'superadmin' })
+      .values({ name, email, password: password_hash, role: role as 'admin' | 'support' })
       .returning({
         id: user.id,
         name: user.name,
