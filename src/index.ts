@@ -10,6 +10,7 @@ import subCategoryAttributeRoutes from './modules/subcategory/attributes/subcate
 import productRoutes from './modules/product/product.routes';
 import { seedDatabase } from './db/database-seeding';
 import cookieParser from 'cookie-parser';
+import { verifyJWT } from "./middlewares/auth";
 
 dotenv.config();
 
@@ -27,10 +28,10 @@ app.use(cookieParser());
 
 // Routes
 app.use('/api/auth', authRoutes);
-app.use("/api/categories", categoryRoutes)
-app.use("/api/subcategories", subCategoryRoutes);
-app.use('/api/subcategory-attributes', subCategoryAttributeRoutes);
-app.use("/api/products", productRoutes);
+app.use("/api/categories", verifyJWT, categoryRoutes)
+app.use("/api/subcategories", verifyJWT, subCategoryRoutes);
+app.use('/api/subcategory-attributes', verifyJWT, subCategoryAttributeRoutes);
+app.use("/api/products", verifyJWT, productRoutes);
 
 app.get('/health', (req, res) => {
   res.json({ status: 'OK', message: 'Server is running' })
