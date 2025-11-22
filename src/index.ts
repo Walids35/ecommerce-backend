@@ -4,6 +4,10 @@ import dotenv from 'dotenv';
 import { errorHandler } from './middlewares/errorHandler';
 import { notFound } from './middlewares/notFound';
 import authRoutes from './modules/auth/auth.routes';
+import categoryRoutes from './modules/categories/category.routes';
+import subCategoryRoutes from './modules/subcategory/subcategory.routes';
+import subCategoryAttributeRoutes from './modules/subcategory/attributes/subcategory-attribute.routes';
+import productRoutes from './modules/product/product.routes';
 import { seedDatabase } from './db/database-seeding';
 import cookieParser from 'cookie-parser';
 
@@ -23,6 +27,10 @@ app.use(cookieParser());
 
 // Routes
 app.use('/api/auth', authRoutes);
+app.use("/api/categories", categoryRoutes)
+app.use("/api/subcategories", subCategoryRoutes);
+app.use('/api/subcategory-attributes', subCategoryAttributeRoutes);
+app.use("/api/products", productRoutes);
 
 app.get('/health', (req, res) => {
   res.json({ status: 'OK', message: 'Server is running' })
