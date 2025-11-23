@@ -195,7 +195,7 @@ export class ProductService {
   // ---------------------------
   // FIND BY ID
   // ---------------------------
-  async findById(id: string) {
+async findById(id: string) {
     const rows = await db
       .select()
       .from(products)
@@ -203,7 +203,40 @@ export class ProductService {
 
     if (!rows.length) throw new Error("Product not found");
 
-    return rows[0];
+    const product = rows[0];
+
+    // Fetch attribute values for this product
+    const attributeRows = await db
+      .select({
+        attributeId: subCategoryAttributes.id,
+        attributeName: subCategoryAttributes.name,
+        valueId: subCategoryAttributeValues.id,
+        value: subCategoryAttributeValues.value,
+      })
+      .from(productAttributeValues)
+      .innerJoin(
+        subCategoryAttributes,
+        eq(productAttributeValues.attributeId, subCategoryAttributes.id)
+      )
+      .innerJoin(
+        subCategoryAttributeValues,
+        eq(
+          productAttributeValues.attributeValueId,
+          subCategoryAttributeValues.id
+        )
+      )
+      .where(eq(productAttributeValues.productId, id));
+
+    // Attach attributes to the product
+    return {
+      ...product,
+      attributes: attributeRows.map((row) => ({
+        attributeId: row.attributeId,
+        attributeName: row.attributeName,
+        attributeValueId: row.valueId,
+        value: row.value,
+      })),
+    };
   }
 
   // ---------------------------
