@@ -131,4 +131,20 @@ export class SubCategoryAttributeService {
       values,
     };
   }
+
+  async getAttributesWithValuesBySubCategory(subCategoryId: number) {
+    const attributes = await this.findBySubCategoryId(subCategoryId);
+
+    const results = await Promise.all(
+      attributes.map(async (attr) => {
+        const values = await this.getValuesByAttribute(attr.id);
+        return {
+          ...attr,
+          values,
+        };
+      })
+    );
+
+    return results;
+  }
 }

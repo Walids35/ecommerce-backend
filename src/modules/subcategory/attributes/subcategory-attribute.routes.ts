@@ -15,6 +15,7 @@ router.delete("/:id", controller.delete.bind(controller));
 // Attribute Values
 router.post("/value", controller.addValue.bind(controller));
 router.get("/value/:attributeId", controller.getValues.bind(controller));
+router.get("/with-values/subcategory/:subCategoryId", controller.getAttributesWithValuesBySubCategory.bind(controller));
 router.delete("/value/remove/:valueId", controller.deleteValue.bind(controller));
 
 export default router;

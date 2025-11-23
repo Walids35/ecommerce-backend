@@ -66,6 +66,11 @@ export class SubCategoryAttributeController {
     res.json(result);
   }
 
+  async getAttributesWithValuesBySubCategory(req: Request, res: Response) {
+    const result = await service.getAttributesWithValuesBySubCategory(Number(req.params.subCategoryId));
+    res.json(result);
+  }
+
   async deleteValue(req: Request, res: Response) {
     try {
       const result = await service.deleteValue(Number(req.params.valueId));
