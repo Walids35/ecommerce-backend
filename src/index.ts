@@ -8,6 +8,7 @@ import categoryRoutes from './modules/categories/category.routes';
 import subCategoryRoutes from './modules/subcategory/subcategory.routes';
 import subCategoryAttributeRoutes from './modules/subcategory/attributes/subcategory-attribute.routes';
 import productRoutes from './modules/product/product.routes';
+import fileUploadRoutes from './modules/file-upload/file-upload.route';
 import { seedDatabase } from './db/database-seeding';
 import cookieParser from 'cookie-parser';
 import { verifyJWT } from "./middlewares/auth";
@@ -32,6 +33,7 @@ app.use("/api/categories", verifyJWT, categoryRoutes)
 app.use("/api/subcategories", verifyJWT, subCategoryRoutes);
 app.use('/api/subcategory-attributes', verifyJWT, subCategoryAttributeRoutes);
 app.use("/api/products", verifyJWT, productRoutes);
+app.use('/api/file-upload', verifyJWT, fileUploadRoutes);
 
 app.get('/health', (req, res) => {
   res.json({ status: 'OK', message: 'Server is running' })
