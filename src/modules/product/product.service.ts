@@ -1,10 +1,11 @@
-import { and, asc, desc, eq, ilike, sql } from "drizzle-orm";
+import { and, asc, desc, eq, ilike, or, sql } from "drizzle-orm";
 import {
   CreateProductInputType,
   UpdateProductInputType,
 } from "./dto/product.dto";
 import { db } from "../../db/data-source";
-import { subCategories, subCategoryAttributes, subCategoryAttributeValues } from "../../db/schema/subcategories";
+import { subCategories, attributes, attributeValues } from "../../db/schema/subcategories";
+import { subSubCategories } from "../../db/schema/subsubcategories";
 import { productAttributeValues, products } from "../../db/schema/product";
 
 export class ProductService {
@@ -12,12 +13,26 @@ export class ProductService {
   // CREATE PRODUCT
   // ---------------------------
   async create(data: CreateProductInputType) {
-    const subcategory = await db
-      .select()
-      .from(subCategories)
-      .where(eq(subCategories.id, data.subCategoryId));
+    // Validate category exists
+    if (data.subCategoryId) {
+      const subcategory = await db
+        .select()
+        .from(subCategories)
+        .where(eq(subCategories.id, data.subCategoryId))
+        .limit(1);
 
-    if (!subcategory.length) throw new Error("Subcategory not found");
+      if (!subcategory.length) throw new Error("Subcategory not found");
+    } else if (data.subSubCategoryId) {
+      const subsubcategory = await db
+        .select()
+        .from(subSubCategories)
+        .where(eq(subSubCategories.id, data.subSubCategoryId))
+        .limit(1);
+
+      if (!subsubcategory.length) throw new Error("Subsubcategory not found");
+    } else {
+      throw new Error("Either subCategoryId or subSubCategoryId must be provided");
+    }
 
     // Insert base product
     const [created] = await db
@@ -28,7 +43,8 @@ export class ProductService {
         price: data.price,
         stock: data.stock,
         discountPercentage: data.discountPercentage ?? "0",
-        subCategoryId: data.subCategoryId,
+        subCategoryId: data.subCategoryId ?? null,
+        subSubCategoryId: data.subSubCategoryId ?? null,
         images: data.images,
         datasheet: data.datasheet,
       })
@@ -36,66 +52,84 @@ export class ProductService {
 
     // Insert attribute values
     if (data.attributes?.length) {
-      for (const attr of data.attributes) {
-        // Validate the attribute
-        const attributeCheck = await db
-          .select()
-          .from(subCategoryAttributes)
-          .where(
-            and(
-              eq(subCategoryAttributes.id, attr.attributeId),
-              eq(subCategoryAttributes.subCategoryId, data.subCategoryId)
-            )
-          );
-
-        if (!attributeCheck.length)
-          throw new Error(
-            `Attribute ${attr.attributeId} does not belong to this subcategory`
-          );
-
-        // Validate the provided value
-        const valueCheck = await db
-          .select()
-          .from(subCategoryAttributeValues)
-          .where(
-            and(
-              eq(
-                subCategoryAttributeValues.id,
-                attr.attributeValueId
-              ),
-              eq(
-                subCategoryAttributeValues.attributeId,
-                attr.attributeId
-              )
-            )
-          );
-
-        if (!valueCheck.length)
-          throw new Error(
-            `Attribute value ${attr.attributeValueId} is invalid for attribute ${attr.attributeId}`
-          );
-
-        await db.insert(productAttributeValues).values({
-          productId: created.id,
-          attributeId: attr.attributeId,
-          attributeValueId: attr.attributeValueId,
-        });
-      }
+      await this.validateAndInsertAttributes(
+        created.id,
+        data.attributes,
+        data.subCategoryId,
+        data.subSubCategoryId
+      );
     }
 
     return created;
   }
 
-  // ---------------------------
-  // FIND ALL
-  // ---------------------------
-  async findAll() {
-    return await db.select().from(products);
+  // Helper: Validate attributes belong to correct parent
+  private async validateAndInsertAttributes(
+    productId: string,
+    attrs: Array<{ attributeId: number; attributeValueId: number }>,
+    subCategoryId?: number,
+    subSubCategoryId?: number
+  ) {
+    for (const attr of attrs) {
+      // Fetch attribute to check ownership
+      const attributeCheck = await db
+        .select()
+        .from(attributes)
+        .where(eq(attributes.id, attr.attributeId))
+        .limit(1);
+
+      if (!attributeCheck.length) {
+        throw new Error(`Attribute ${attr.attributeId} not found`);
+      }
+
+      const attribute = attributeCheck[0];
+
+      // Validate attribute belongs to correct parent
+      if (subCategoryId && attribute.subCategoryId !== subCategoryId) {
+        throw new Error(
+          `Attribute ${attr.attributeId} does not belong to subcategory ${subCategoryId}`
+        );
+      }
+
+      if (subSubCategoryId && attribute.subSubCategoryId !== subSubCategoryId) {
+        throw new Error(
+          `Attribute ${attr.attributeId} does not belong to subsubcategory ${subSubCategoryId}`
+        );
+      }
+
+      // Validate the provided value
+      const valueCheck = await db
+        .select()
+        .from(attributeValues)
+        .where(
+          and(
+            eq(attributeValues.id, attr.attributeValueId),
+            eq(attributeValues.attributeId, attr.attributeId)
+          )
+        )
+        .limit(1);
+
+      if (!valueCheck.length) {
+        throw new Error(
+          `Attribute value ${attr.attributeValueId} is invalid for attribute ${attr.attributeId}`
+        );
+      }
+
+      await db.insert(productAttributeValues).values({
+        productId: productId,
+        attributeId: attr.attributeId,
+        attributeValueId: attr.attributeValueId,
+      });
+    }
   }
 
+  // ---------------------------
+  // FIND ALL WITH SEARCH
+  // ---------------------------
   async findAllWithSearch(query: {
     search?: string;
     subCategoryId?: number;
+    subSubCategoryId?: number;
     page?: number;
     limit?: number;
     sort?: string;
@@ -103,6 +137,7 @@ export class ProductService {
     const {
       search,
       subCategoryId,
+      subSubCategoryId,
       page = 1,
       limit = 10,
       sort = "newest",
@@ -113,13 +148,15 @@ export class ProductService {
     let whereClause: any[] = [];
 
     if (search) {
-      whereClause.push(
-        ilike(products.name, `%${search}%`)
-      );
+      whereClause.push(ilike(products.name, `%${search}%`));
     }
 
     if (subCategoryId) {
       whereClause.push(eq(products.subCategoryId, subCategoryId));
+    }
+
+    if (subSubCategoryId) {
+      whereClause.push(eq(products.subSubCategoryId, subSubCategoryId));
     }
 
     const orderBy =
@@ -127,7 +164,7 @@ export class ProductService {
         ? asc(products.price)
         : sort === "price_desc"
         ? desc(products.price)
-        : desc(products.createdAt); // newest
+        : desc(products.createdAt);
 
     const rows = await db
       .select()
@@ -143,22 +180,19 @@ export class ProductService {
     const attributeRows = await db
       .select({
         productId: productAttributeValues.productId,
-        attributeId: subCategoryAttributes.id,
-        attributeName: subCategoryAttributes.name,
-        valueId: subCategoryAttributeValues.id,
-        value: subCategoryAttributeValues.value,
+        attributeId: attributes.id,
+        attributeName: attributes.name,
+        valueId: attributeValues.id,
+        value: attributeValues.value,
       })
       .from(productAttributeValues)
       .innerJoin(
-        subCategoryAttributes,
-        eq(productAttributeValues.attributeId, subCategoryAttributes.id)
+        attributes,
+        eq(productAttributeValues.attributeId, attributes.id)
       )
       .innerJoin(
-        subCategoryAttributeValues,
-        eq(
-          productAttributeValues.attributeValueId,
-          subCategoryAttributeValues.id
-        )
+        attributeValues,
+        eq(productAttributeValues.attributeValueId, attributeValues.id)
       )
       .where(sql`${productAttributeValues.productId} = ANY(${ids})`);
 
@@ -173,16 +207,15 @@ export class ProductService {
       return acc;
     }, {} as Record<string, any[]>);
 
-    // Attach attributes to each product
     const final = rows.map((p) => ({
       ...p,
       attributes: groupedAttributes[p.id] ?? [],
     }));
 
-    // Compute total count
     const [{ count }] = await db
       .select({ count: sql<number>`COUNT(*)` })
-      .from(products);
+      .from(products)
+      .where(whereClause.length ? and(...whereClause) : undefined);
 
     return {
       page,
@@ -192,42 +225,43 @@ export class ProductService {
     };
   }
 
+  async findAll() {
+    const rows = await db.select().from(products).orderBy(desc(products.createdAt));
+    return rows;
+  }
+
   // ---------------------------
   // FIND BY ID
   // ---------------------------
-async findById(id: string) {
+  async findById(id: string) {
     const rows = await db
       .select()
       .from(products)
-      .where(eq(products.id, id));
+      .where(eq(products.id, id))
+      .limit(1);
 
     if (!rows.length) throw new Error("Product not found");
 
     const product = rows[0];
 
-    // Fetch attribute values for this product
     const attributeRows = await db
       .select({
-        attributeId: subCategoryAttributes.id,
-        attributeName: subCategoryAttributes.name,
-        valueId: subCategoryAttributeValues.id,
-        value: subCategoryAttributeValues.value,
+        attributeId: attributes.id,
+        attributeName: attributes.name,
+        valueId: attributeValues.id,
+        value: attributeValues.value,
       })
       .from(productAttributeValues)
       .innerJoin(
-        subCategoryAttributes,
-        eq(productAttributeValues.attributeId, subCategoryAttributes.id)
+        attributes,
+        eq(productAttributeValues.attributeId, attributes.id)
       )
       .innerJoin(
-        subCategoryAttributeValues,
-        eq(
-          productAttributeValues.attributeValueId,
-          subCategoryAttributeValues.id
-        )
+        attributeValues,
+        eq(productAttributeValues.attributeValueId, attributeValues.id)
       )
       .where(eq(productAttributeValues.productId, id));
 
-    // Attach attributes to the product
     return {
       ...product,
       attributes: attributeRows.map((row) => ({
@@ -243,9 +277,11 @@ async findById(id: string) {
   // UPDATE PRODUCT
   // ---------------------------
   async update(id: string, data: UpdateProductInputType) {
-    await this.findById(id); // ensure product exists
+    const existing = await this.findById(id);
 
-    const payload: Record<string, any> = {};
+    const payload: Record<string, any> = {
+      updatedAt: new Date(),
+    };
 
     if (data.name !== undefined) payload.name = data.name;
     if (data.description !== undefined) payload.description = data.description;
@@ -268,13 +304,12 @@ async findById(id: string) {
         .delete(productAttributeValues)
         .where(eq(productAttributeValues.productId, id));
 
-      for (const attr of data.attributes) {
-        await db.insert(productAttributeValues).values({
-          productId: id,
-          attributeId: attr.attributeId,
-          attributeValueId: attr.attributeValueId,
-        });
-      }
+      await this.validateAndInsertAttributes(
+        id,
+        data.attributes,
+        existing.subCategoryId ?? undefined,
+        existing.subSubCategoryId ?? undefined
+      );
     }
 
     return updated;

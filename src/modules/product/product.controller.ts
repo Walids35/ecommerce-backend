@@ -12,10 +12,6 @@ export class ProductController {
     res.json(product);
   }
 
-  async findAll(_: Request, res: Response) {
-    res.json(await service.findAll());
-  }
-
   async findById(req: Request, res: Response) {
     const product = await service.findById(req.params.id);
     res.json(product);
@@ -30,6 +26,11 @@ export class ProductController {
   async delete(req: Request, res: Response) {
     const deleted = await service.delete(req.params.id);
     res.json(deleted);
+  }
+
+  async findAll(req: Request, res: Response) {
+    const products = await service.findAll();
+    res.json(products);
   }
 
   async findAllWithSearch(req: Request, res: Response) {

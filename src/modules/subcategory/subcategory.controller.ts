@@ -22,7 +22,8 @@ export class SubCategoryController {
 
   async findOne(req: Request, res: Response) {
     try {
-      const item = await service.findById(req.params.id);
+      const id = Number(req.params.id);
+      const item = await service.findById(id);
       res.json(item);
     } catch (err: any) {
       res.status(404).json({ error: err.message });
@@ -31,8 +32,9 @@ export class SubCategoryController {
 
   async update(req: Request, res: Response) {
     try {
+      const id = Number(req.params.id);
       const body = UpdateSubCategoryDto.parse(req.body);
-      const updated = await service.update(req.params.id, body);
+      const updated = await service.update(id, body);
       res.json(updated);
     } catch (err: any) {
       res.status(400).json({ error: err.message });
@@ -41,7 +43,8 @@ export class SubCategoryController {
 
   async delete(req: Request, res: Response) {
     try {
-      const deleted = await service.delete(req.params.id);
+      const id = Number(req.params.id);
+      const deleted = await service.delete(id);
       res.json(deleted);
     } catch (err: any) {
       res.status(404).json({ error: err.message });

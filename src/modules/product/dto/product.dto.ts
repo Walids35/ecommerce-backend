@@ -1,4 +1,3 @@
-// dto/product.dto.ts
 import { z } from "zod";
 
 export const CreateProductInput = z.object({
@@ -7,11 +6,14 @@ export const CreateProductInput = z.object({
   price: z.string(),
   stock: z.number().int().nonnegative(),
   discountPercentage: z.string().optional(),
-  subCategoryId: z.number().int(),
+
+  // Flexible category linking: exactly one required
+  subCategoryId: z.number().int().optional(),
+  subSubCategoryId: z.number().int().optional(),
+
   images: z.array(z.string()).min(1),
   datasheet: z.string().optional(),
 
-  // [{ attributeId: number, valueId: number }]
   attributes: z
     .array(
       z.object({
@@ -20,7 +22,14 @@ export const CreateProductInput = z.object({
       })
     )
     .optional(),
-});
+}).refine(
+  (data) => {
+    const hasSubCat = data.subCategoryId !== undefined;
+    const hasSubSubCat = data.subSubCategoryId !== undefined;
+    return (hasSubCat && !hasSubSubCat) || (!hasSubCat && hasSubSubCat);
+  },
+  { message: "Exactly one of subCategoryId or subSubCategoryId must be provided" }
+);
 
 export const UpdateProductInput = z.object({
   name: z.string().optional(),

@@ -1,39 +1,39 @@
 import { eq, sql } from "drizzle-orm";
-import { CreateSubCategoryInput, UpdateSubCategoryInput } from "./dto/subcategory.dto";
-import { categories } from "../../db/schema/categories";
-import { db } from "../../db/data-source";
+import { CreateSubSubCategoryInput, UpdateSubSubCategoryInput } from "./dto/subsubcategory.dto";
 import { subCategories } from "../../db/schema/subcategories";
 import { subSubCategories } from "../../db/schema/subsubcategories";
 import { products } from "../../db/schema/product";
+import { db } from "../../db/data-source";
 
-export class SubCategoryService {
-  async create(data: CreateSubCategoryInput) {
-    const category = await db
+export class SubSubCategoryService {
+  async create(data: CreateSubSubCategoryInput) {
+    // Validate parent subcategory exists
+    const subcategory = await db
       .select()
-      .from(categories)
-      .where(eq(categories.id, data.categoryId))
+      .from(subCategories)
+      .where(eq(subCategories.id, data.subCategoryId))
       .limit(1);
 
-    if (category.length === 0) throw new Error("Category not found");
+    if (subcategory.length === 0) throw new Error("Subcategory not found");
 
     // Check slug uniqueness (global)
     const existingSlug = await db
       .select()
-      .from(subCategories)
-      .where(eq(subCategories.slug, data.slug))
+      .from(subSubCategories)
+      .where(eq(subSubCategories.slug, data.slug))
       .limit(1);
 
     if (existingSlug.length > 0) throw new Error("Slug already exists");
 
     const [created] = await db
-      .insert(subCategories)
+      .insert(subSubCategories)
       .values({
         name: data.name,
         description: data.description,
         slug: data.slug,
         isActive: data.isActive ?? true,
         displayOrder: data.displayOrder ?? 0,
-        categoryId: data.categoryId,
+        subCategoryId: data.subCategoryId,
       })
       .returning();
 
@@ -41,40 +41,47 @@ export class SubCategoryService {
   }
 
   async findAll() {
-    return await db.select().from(subCategories);
+    return await db.select().from(subSubCategories);
   }
 
   async findById(id: number) {
     const result = await db
       .select()
-      .from(subCategories)
-      .where(eq(subCategories.id, id))
+      .from(subSubCategories)
+      .where(eq(subSubCategories.id, id))
       .limit(1);
 
-    if (result.length === 0) throw new Error("Sub-category not found");
+    if (result.length === 0) throw new Error("Subsubcategory not found");
     return result[0];
+  }
+
+  async findBySubCategoryId(subCategoryId: number) {
+    return await db
+      .select()
+      .from(subSubCategories)
+      .where(eq(subSubCategories.subCategoryId, subCategoryId));
   }
 
   async findBySlug(slug: string) {
     const result = await db
       .select()
-      .from(subCategories)
-      .where(eq(subCategories.slug, slug))
+      .from(subSubCategories)
+      .where(eq(subSubCategories.slug, slug))
       .limit(1);
 
-    if (result.length === 0) throw new Error("Subcategory not found");
+    if (result.length === 0) throw new Error("Subsubcategory not found");
     return result[0];
   }
 
-  async update(id: number, data: UpdateSubCategoryInput) {
+  async update(id: number, data: UpdateSubSubCategoryInput) {
     await this.findById(id);
 
     // Check slug uniqueness if being updated
     if (data.slug) {
       const existingSlug = await db
         .select()
-        .from(subCategories)
-        .where(eq(subCategories.slug, data.slug))
+        .from(subSubCategories)
+        .where(eq(subSubCategories.slug, data.slug))
         .limit(1);
 
       if (existingSlug.length > 0 && existingSlug[0].id !== id) {
@@ -91,12 +98,12 @@ export class SubCategoryService {
     if (data.slug !== undefined) payload.slug = data.slug;
     if (data.isActive !== undefined) payload.isActive = data.isActive;
     if (data.displayOrder !== undefined) payload.displayOrder = data.displayOrder;
-    if (data.categoryId !== undefined) payload.categoryId = data.categoryId;
+    if (data.subCategoryId !== undefined) payload.subCategoryId = data.subCategoryId;
 
     const [updated] = await db
-      .update(subCategories)
+      .update(subSubCategories)
       .set(payload)
-      .where(eq(subCategories.id, id))
+      .where(eq(subSubCategories.id, id))
       .returning();
 
     return updated;
@@ -105,29 +112,19 @@ export class SubCategoryService {
   async delete(id: number) {
     await this.findById(id);
 
-    // Check if any subsubcategories exist
-    const subsubcats = await db
-      .select({ count: sql<number>`count(*)` })
-      .from(subSubCategories)
-      .where(eq(subSubCategories.subCategoryId, id));
-
-    if (subsubcats[0].count > 0) {
-      throw new Error("Cannot delete subcategory with subsubcategories");
-    }
-
-    // Check if any products are directly linked
+    // Check if any products are linked
     const linkedProducts = await db
       .select({ count: sql<number>`count(*)` })
       .from(products)
-      .where(eq(products.subCategoryId, id));
+      .where(eq(products.subSubCategoryId, id));
 
     if (linkedProducts[0].count > 0) {
-      throw new Error("Cannot delete subcategory with linked products");
+      throw new Error("Cannot delete subsubcategory with linked products");
     }
 
     const [deleted] = await db
-      .delete(subCategories)
-      .where(eq(subCategories.id, id))
+      .delete(subSubCategories)
+      .where(eq(subSubCategories.id, id))
       .returning();
 
     return deleted;
