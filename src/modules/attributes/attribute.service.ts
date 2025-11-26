@@ -21,6 +21,19 @@ export class AttributeService {
         .limit(1);
 
       if (exists.length === 0) throw new Error("Subcategory not found");
+
+      // Check if subcategory has subsubcategories
+      const hasSubSubCategories = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(subSubCategories)
+        .where(eq(subSubCategories.subCategoryId, data.subCategoryId));
+
+      if (hasSubSubCategories[0].count > 0) {
+        throw new Error(
+          "Cannot create attributes for a subcategory that has subsubcategories. " +
+          "Attributes can only be added to the subsubcategories themselves."
+        );
+      }
     } else if (data.subSubCategoryId) {
       const exists = await db
         .select()

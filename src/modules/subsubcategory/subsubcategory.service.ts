@@ -1,6 +1,6 @@
 import { eq, sql } from "drizzle-orm";
 import { CreateSubSubCategoryInput, UpdateSubSubCategoryInput } from "./dto/subsubcategory.dto";
-import { subCategories } from "../../db/schema/subcategories";
+import { subCategories, attributes } from "../../db/schema/subcategories";
 import { subSubCategories } from "../../db/schema/subsubcategories";
 import { products } from "../../db/schema/product";
 import { db } from "../../db/data-source";
@@ -15,6 +15,19 @@ export class SubSubCategoryService {
       .limit(1);
 
     if (subcategory.length === 0) throw new Error("Subcategory not found");
+
+    // Check if subcategory has attributes
+    const hasAttributes = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(attributes)
+      .where(eq(attributes.subCategoryId, data.subCategoryId));
+
+    if (hasAttributes[0].count > 0) {
+      throw new Error(
+        "Cannot create subsubcategories for a subcategory that has attributes. " +
+        "A subcategory can either have attributes OR subsubcategories, but not both."
+      );
+    }
 
     // Check slug uniqueness (global)
     const existingSlug = await db

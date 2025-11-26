@@ -41,13 +41,23 @@ Database schemas are defined in `src/db/schema/` using Drizzle ORM with PostgreS
 
 ### Product Data Model
 The application uses a flexible attribute system for products:
-- **Categories** → **Subcategories** → **Products**
-- Each subcategory can define custom **attributes** (e.g., "Color", "Size")
+- **Categories** → **Subcategories** → **Subsubcategories (optional)** → **Products**
 - Each attribute has multiple predefined **attribute values** (e.g., "Red", "Blue")
 - Products are linked to specific attribute values through `product_attribute_values` junction table
 - This allows different subcategories to have different product specifications without schema changes
 
-Example: Electronics subcategory might have attributes like "Screen Size" and "RAM", while Clothing has "Size" and "Color".
+**Important Constraint: Subcategory Attribute Rules**
+A subcategory can either:
+1. **Have attributes but NO subsubcategories** - Products link directly to the subcategory
+2. **Have NO attributes but have subsubcategories with attributes** - Products link to subsubcategories
+
+This constraint prevents conflicts when creating products, ensuring there's only one source of attributes per product.
+
+Examples:
+- **Tablets** subcategory has attributes ("Screen Size", "Storage") and NO subsubcategories
+- **Laptops** subcategory has NO attributes but has subsubcategories:
+  - **Gaming Laptops** subsubcategory with attributes ("GPU", "Refresh Rate", "RAM", "Processor", "Storage")
+  - **Business Laptops** subsubcategory with attributes ("Weight", "Battery Life", "RAM", "Processor", "Storage")
 
 ### Authentication Flow
 - JWT tokens stored in HTTP-only cookies
@@ -81,13 +91,17 @@ All routes except `/api/auth/*` and `/health` require JWT token in cookies.
 ```
 categories (id, name, description)
   └── sub_categories (id, name, category_id)
-      ├── sub_category_attributes (id, sub_category_id, name)
-      │   └── sub_category_attribute_values (id, attribute_id, value)
+      ├── attributes (id, sub_category_id OR subsubcategory_id, name)
+      │   └── attribute_values (id, attribute_id, value)
       │       └── product_attribute_values (product_id, attribute_id, attribute_value_id)
+      ├── subsubcategories (id, name, sub_category_id)
+      │   ├── attributes (linked to subsubcategory)
+      │   └── products (id, name, price, stock, images, subsubcategory_id)
       └── products (id, name, price, stock, images, sub_category_id)
-          └── product_attribute_values (links products to specific attribute values)
 
 user (id, email, password, name, role)
+
+CONSTRAINT: A subcategory can have EITHER attributes OR subsubcategories, not both.
 ```
 
 ## Key Implementation Patterns

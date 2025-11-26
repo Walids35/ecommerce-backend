@@ -8,6 +8,7 @@ import { categories } from "./schema/categories";
 import { subCategories, attributes, attributeValues } from "./schema/subcategories";
 import { subSubCategories } from "./schema/subsubcategories";
 import { productAttributeValues, products } from "./schema/product";
+import { orders, orderItems, orderStatusHistory } from "./schema/orders";
 
 async function seedDatabase() {
   try {
@@ -163,15 +164,16 @@ async function seedDatabase() {
     // Gaming Laptop attributes (subsubcategory level)
     const gpuAttr = await seedAttribute("GPU", undefined, gamingLaptopSub.id);
     const refreshRateAttr = await seedAttribute("Refresh Rate", undefined, gamingLaptopSub.id);
+    const gamingRamAttr = await seedAttribute("RAM", undefined, gamingLaptopSub.id);
+    const gamingCpuAttr = await seedAttribute("Processor", undefined, gamingLaptopSub.id);
+    const gamingStorageAttr = await seedAttribute("Storage", undefined, gamingLaptopSub.id);
 
     // Business Laptop attributes (subsubcategory level)
     const weightAttr = await seedAttribute("Weight", undefined, businessLaptopSub.id);
     const batteryLifeAttr = await seedAttribute("Battery Life", undefined, businessLaptopSub.id);
-
-    // Shared Laptop attributes (subcategory level - inherited by all laptop types)
-    const ramAttr = await seedAttribute("RAM", laptopSub.id);
-    const cpuAttr = await seedAttribute("Processor", laptopSub.id);
-    const storageAttr = await seedAttribute("Storage", laptopSub.id);
+    const businessRamAttr = await seedAttribute("RAM", undefined, businessLaptopSub.id);
+    const businessCpuAttr = await seedAttribute("Processor", undefined, businessLaptopSub.id);
+    const businessStorageAttr = await seedAttribute("Storage", undefined, businessLaptopSub.id);
 
     // Tablet attributes (subcategory level - tablets have no subsubcategory)
     const screenSizeAttr = await seedAttribute("Screen Size", tabletSub.id);
@@ -208,21 +210,19 @@ async function seedDatabase() {
       )[0];
     }
 
-    // Shared laptop attribute values
-    const ram16 = await seedAttributeValue(ramAttr.id, "16GB");
-    const ram32 = await seedAttributeValue(ramAttr.id, "32GB");
-    const cpuI7 = await seedAttributeValue(cpuAttr.id, "Intel i7");
-    const cpuI9 = await seedAttributeValue(cpuAttr.id, "Intel i9");
-    const storage512 = await seedAttributeValue(storageAttr.id, "512GB SSD");
-    const storage1tb = await seedAttributeValue(storageAttr.id, "1TB SSD");
-
-    // Gaming laptop specific
+    // Gaming laptop attribute values
+    const gamingRam32 = await seedAttributeValue(gamingRamAttr.id, "32GB");
+    const gamingCpuI9 = await seedAttributeValue(gamingCpuAttr.id, "Intel i9");
+    const gamingStorage1tb = await seedAttributeValue(gamingStorageAttr.id, "1TB SSD");
     const gpuRtx4070 = await seedAttributeValue(gpuAttr.id, "RTX 4070");
     const gpuRtx4090 = await seedAttributeValue(gpuAttr.id, "RTX 4090");
     const refresh144 = await seedAttributeValue(refreshRateAttr.id, "144Hz");
     const refresh240 = await seedAttributeValue(refreshRateAttr.id, "240Hz");
 
-    // Business laptop specific
+    // Business laptop attribute values
+    const businessRam16 = await seedAttributeValue(businessRamAttr.id, "16GB");
+    const businessCpuI7 = await seedAttributeValue(businessCpuAttr.id, "Intel i7");
+    const businessStorage512 = await seedAttributeValue(businessStorageAttr.id, "512GB SSD");
     const weight15kg = await seedAttributeValue(weightAttr.id, "1.5kg");
     const weight18kg = await seedAttributeValue(weightAttr.id, "1.8kg");
     const battery10h = await seedAttributeValue(batteryLifeAttr.id, "10 hours");
@@ -405,30 +405,30 @@ async function seedDatabase() {
     }
 
     // ASUS ROG (gaming laptop)
-    await link(rog.id, ramAttr.id, ram32.id);
-    await link(rog.id, cpuAttr.id, cpuI9.id);
-    await link(rog.id, storageAttr.id, storage1tb.id);
+    await link(rog.id, gamingRamAttr.id, gamingRam32.id);
+    await link(rog.id, gamingCpuAttr.id, gamingCpuI9.id);
+    await link(rog.id, gamingStorageAttr.id, gamingStorage1tb.id);
     await link(rog.id, gpuAttr.id, gpuRtx4090.id);
     await link(rog.id, refreshRateAttr.id, refresh240.id);
 
     // MSI (gaming laptop)
-    await link(msi.id, ramAttr.id, ram32.id);
-    await link(msi.id, cpuAttr.id, cpuI9.id);
-    await link(msi.id, storageAttr.id, storage1tb.id);
+    await link(msi.id, gamingRamAttr.id, gamingRam32.id);
+    await link(msi.id, gamingCpuAttr.id, gamingCpuI9.id);
+    await link(msi.id, gamingStorageAttr.id, gamingStorage1tb.id);
     await link(msi.id, gpuAttr.id, gpuRtx4070.id);
     await link(msi.id, refreshRateAttr.id, refresh144.id);
 
     // ThinkPad (business laptop)
-    await link(thinkpad.id, ramAttr.id, ram16.id);
-    await link(thinkpad.id, cpuAttr.id, cpuI7.id);
-    await link(thinkpad.id, storageAttr.id, storage512.id);
+    await link(thinkpad.id, businessRamAttr.id, businessRam16.id);
+    await link(thinkpad.id, businessCpuAttr.id, businessCpuI7.id);
+    await link(thinkpad.id, businessStorageAttr.id, businessStorage512.id);
     await link(thinkpad.id, weightAttr.id, weight15kg.id);
     await link(thinkpad.id, batteryLifeAttr.id, battery15h.id);
 
     // Latitude (business laptop)
-    await link(latitude.id, ramAttr.id, ram16.id);
-    await link(latitude.id, cpuAttr.id, cpuI7.id);
-    await link(latitude.id, storageAttr.id, storage512.id);
+    await link(latitude.id, businessRamAttr.id, businessRam16.id);
+    await link(latitude.id, businessCpuAttr.id, businessCpuI7.id);
+    await link(latitude.id, businessStorageAttr.id, businessStorage512.id);
     await link(latitude.id, weightAttr.id, weight18kg.id);
     await link(latitude.id, batteryLifeAttr.id, battery10h.id);
 
@@ -449,6 +449,241 @@ async function seedDatabase() {
     await link(herman.id, maxWeightAttr.id, weight150.id);
 
     console.log("✔ Product → Attribute → Value links created");
+
+    // -------------------------------
+    // ORDERS
+    // -------------------------------
+    async function seedOrder(
+      orderNumber: string,
+      customerName: string,
+      customerEmail: string,
+      customerPhone: string,
+      city: string,
+      postalCode: string,
+      streetAddress: string,
+      status: "pending" | "confirmed" | "processing" | "shipped" | "delivered" | "cancelled",
+      paymentMethod: "devis" | "livraison" | "carte",
+      isPaid: boolean,
+      subtotal: string,
+      shippingCost: string,
+      taxAmount: string,
+      totalPrice: string,
+      paidAt?: Date
+    ) {
+      const exists = await db
+        .select()
+        .from(orders)
+        .where(eq(orders.orderNumber, orderNumber))
+        .limit(1);
+
+      if (exists.length > 0) return exists[0];
+
+      return (
+        await db
+          .insert(orders)
+          .values({
+            orderNumber,
+            customerName,
+            customerEmail,
+            customerPhone,
+            city,
+            postalCode,
+            streetAddress,
+            status,
+            paymentMethod,
+            isPaid,
+            subtotal,
+            shippingCost,
+            taxAmount,
+            totalPrice,
+            paidAt: paidAt ?? null,
+          })
+          .returning()
+      )[0];
+    }
+
+    // Create sample orders
+    const order1 = await seedOrder(
+      "ORD-2025-0001",
+      "John Smith",
+      "john.smith@example.com",
+      "+1234567890",
+      "Tunis",
+      "1000",
+      "123 Avenue Habib Bourguiba",
+      "delivered",
+      "carte",
+      true,
+      "2299.99",
+      "15.00",
+      "230.00",
+      "2544.99",
+      new Date("2025-01-15")
+    );
+
+    const order2 = await seedOrder(
+      "ORD-2025-0002",
+      "Jane Doe",
+      "jane.doe@example.com",
+      "+1987654321",
+      "Sfax",
+      "3000",
+      "456 Rue de la République",
+      "processing",
+      "livraison",
+      false,
+      "1349.98",
+      "20.00",
+      "135.00",
+      "1504.98"
+    );
+
+    const order3 = await seedOrder(
+      "ORD-2025-0003",
+      "Ahmed Ben Ali",
+      "ahmed.benali@example.com",
+      "+21612345678",
+      "Sousse",
+      "4000",
+      "789 Avenue Mohamed V",
+      "pending",
+      "devis",
+      false,
+      "599.99",
+      "10.00",
+      "60.00",
+      "669.99"
+    );
+
+    const order4 = await seedOrder(
+      "ORD-2025-0004",
+      "Sarah Johnson",
+      "sarah.j@example.com",
+      "+1122334455",
+      "Ariana",
+      "2080",
+      "321 Rue des Jasmins",
+      "shipped",
+      "carte",
+      true,
+      "3199.98",
+      "25.00",
+      "320.00",
+      "3544.98",
+      new Date("2025-01-20")
+    );
+
+    console.log("✔ Orders seeded");
+
+    // -------------------------------
+    // ORDER ITEMS
+    // -------------------------------
+    async function seedOrderItem(
+      orderId: number,
+      productId: string,
+      productName: string,
+      unitPrice: string,
+      quantity: number,
+      subtotal: string
+    ) {
+      const exists = await db
+        .select()
+        .from(orderItems)
+        .where(
+          and(
+            eq(orderItems.orderId, orderId),
+            eq(orderItems.productId, productId)
+          )
+        )
+        .limit(1);
+
+      if (exists.length > 0) return exists[0];
+
+      return (
+        await db
+          .insert(orderItems)
+          .values({
+            orderId,
+            productId,
+            productName,
+            unitPrice,
+            quantity,
+            subtotal,
+          })
+          .returning()
+      )[0];
+    }
+
+    // Order 1: ASUS ROG
+    await seedOrderItem(order1.id, rog.id, "ASUS ROG Strix", "2299.99", 1, "2299.99");
+
+    // Order 2: ErgoMax + iPad
+    await seedOrderItem(order2.id, ergomax.id, "ErgoMax Pro", "349.99", 1, "349.99");
+    await seedOrderItem(order2.id, ipad.id, "iPad Air", "599.99", 1, "599.99");
+    await seedOrderItem(order2.id, galaxy.id, "Samsung Galaxy Tab S9", "749.99", 1, "749.99");
+
+    // Order 3: iPad only
+    await seedOrderItem(order3.id, ipad.id, "iPad Air", "599.99", 1, "599.99");
+
+    // Order 4: ThinkPad + Herman Miller
+    await seedOrderItem(order4.id, thinkpad.id, "ThinkPad X1 Carbon", "1899.99", 1, "1899.99");
+    await seedOrderItem(order4.id, herman.id, "Herman Miller Aeron", "1299.99", 1, "1299.99");
+
+    console.log("✔ Order items seeded");
+
+    // -------------------------------
+    // ORDER STATUS HISTORY
+    // -------------------------------
+    async function seedStatusHistory(
+      orderId: number,
+      oldStatus: "pending" | "confirmed" | "processing" | "shipped" | "delivered" | "cancelled" | null,
+      newStatus: "pending" | "confirmed" | "processing" | "shipped" | "delivered" | "cancelled",
+      changedBy: string
+    ) {
+      const exists = await db
+        .select()
+        .from(orderStatusHistory)
+        .where(
+          and(
+            eq(orderStatusHistory.orderId, orderId),
+            oldStatus !== null ? eq(orderStatusHistory.oldStatus, oldStatus) : sql`${orderStatusHistory.oldStatus} IS NULL`,
+            eq(orderStatusHistory.newStatus, newStatus)
+          )
+        )
+        .limit(1);
+
+      if (exists.length > 0) return;
+
+      await db.insert(orderStatusHistory).values({
+        orderId,
+        oldStatus,
+        newStatus,
+        changedBy,
+      });
+    }
+
+    // Order 1 status history (delivered)
+    await seedStatusHistory(order1.id, null, "pending", "System");
+    await seedStatusHistory(order1.id, "pending", "confirmed", "admin@gmail.com");
+    await seedStatusHistory(order1.id, "confirmed", "processing", "admin@gmail.com");
+    await seedStatusHistory(order1.id, "processing", "shipped", "admin@gmail.com");
+    await seedStatusHistory(order1.id, "shipped", "delivered", "System");
+
+    // Order 2 status history (processing)
+    await seedStatusHistory(order2.id, null, "pending", "System");
+    await seedStatusHistory(order2.id, "pending", "confirmed", "admin@gmail.com");
+    await seedStatusHistory(order2.id, "confirmed", "processing", "admin@gmail.com");
+
+    // Order 3 status history (pending)
+    await seedStatusHistory(order3.id, null, "pending", "System");
+
+    // Order 4 status history (shipped)
+    await seedStatusHistory(order4.id, null, "pending", "System");
+    await seedStatusHistory(order4.id, "pending", "confirmed", "admin@gmail.com");
+    await seedStatusHistory(order4.id, "confirmed", "processing", "admin@gmail.com");
+    await seedStatusHistory(order4.id, "processing", "shipped", "admin@gmail.com");
+
+    console.log("✔ Order status history seeded");
 
     console.log("🌱 Database seeding completed successfully!");
   } catch (error) {
