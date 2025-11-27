@@ -5,7 +5,7 @@ const router = Router();
 const controller = new ProductController();
 
 router.post("/", controller.create);
-router.get("/", controller.findAll);
+router.get("/", controller.findAllWithSearch);
 router.get("/:id", controller.findById);
 router.put("/:id", controller.update);
 router.delete("/:id", controller.delete);

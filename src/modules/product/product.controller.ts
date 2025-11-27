@@ -37,9 +37,11 @@ export class ProductController {
     const products = await service.findAllWithSearch({
       search: req.query.search as string,
       subCategoryId: req.query.subCategoryId ? Number(req.query.subCategoryId) : undefined,
+      subSubCategoryId: req.query.subSubCategoryId ? Number(req.query.subSubCategoryId) : undefined,
       page: req.query.page ? Number(req.query.page) : 1,
       limit: req.query.limit ? Number(req.query.limit) : 10,
       sort: req.query.sort as string,
+      sortBy: req.query.sortBy as string,
     });
 
     res.json(products);

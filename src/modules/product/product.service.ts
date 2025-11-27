@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, ilike, or, sql } from "drizzle-orm";
+import { and, asc, desc, eq, ilike, inArray, or, sql } from "drizzle-orm";
 import {
   CreateProductInputType,
   UpdateProductInputType,
@@ -133,6 +133,7 @@ export class ProductService {
     page?: number;
     limit?: number;
     sort?: string;
+    sortBy?: string;
   }) {
     const {
       search,
@@ -141,6 +142,7 @@ export class ProductService {
       page = 1,
       limit = 10,
       sort = "newest",
+      sortBy,
     } = query;
 
     const offset = (page - 1) * limit;
@@ -148,7 +150,12 @@ export class ProductService {
     let whereClause: any[] = [];
 
     if (search) {
-      whereClause.push(ilike(products.name, `%${search}%`));
+      whereClause.push(
+        or(
+          ilike(products.name, `%${search}%`),
+          sql`${products.id}::text ILIKE ${'%' + search + '%'}`
+        )
+      );
     }
 
     if (subCategoryId) {
@@ -159,12 +166,41 @@ export class ProductService {
       whereClause.push(eq(products.subSubCategoryId, subSubCategoryId));
     }
 
-    const orderBy =
-      sort === "price_asc"
-        ? asc(products.price)
-        : sort === "price_desc"
-        ? desc(products.price)
-        : desc(products.createdAt);
+    // Dynamic sorting with sortBy parameter
+    let orderBy;
+    if (sortBy) {
+      const direction = sort === "asc" ? asc : desc;
+      switch (sortBy) {
+        case "name":
+          orderBy = direction(products.name);
+          break;
+        case "price":
+          orderBy = direction(products.price);
+          break;
+        case "stock":
+          orderBy = direction(products.stock);
+          break;
+        case "discountPercentage":
+          orderBy = direction(products.discountPercentage);
+          break;
+        case "createdAt":
+          orderBy = direction(products.createdAt);
+          break;
+        case "updatedAt":
+          orderBy = direction(products.updatedAt);
+          break;
+        default:
+          orderBy = desc(products.createdAt);
+      }
+    } else {
+      // Legacy sort parameter support
+      orderBy =
+        sort === "price_asc"
+          ? asc(products.price)
+          : sort === "price_desc"
+          ? desc(products.price)
+          : desc(products.createdAt);
+    }
 
     const rows = await db
       .select()
@@ -177,24 +213,27 @@ export class ProductService {
     // Fetch attribute values for all product IDs
     const ids = rows.map((p) => p.id);
 
-    const attributeRows = await db
-      .select({
-        productId: productAttributeValues.productId,
-        attributeId: attributes.id,
-        attributeName: attributes.name,
-        valueId: attributeValues.id,
-        value: attributeValues.value,
-      })
-      .from(productAttributeValues)
-      .innerJoin(
-        attributes,
-        eq(productAttributeValues.attributeId, attributes.id)
-      )
-      .innerJoin(
-        attributeValues,
-        eq(productAttributeValues.attributeValueId, attributeValues.id)
-      )
-      .where(sql`${productAttributeValues.productId} = ANY(${ids})`);
+    let attributeRows: any[] = [];
+    if (ids.length > 0) {
+      attributeRows = await db
+        .select({
+          productId: productAttributeValues.productId,
+          attributeId: attributes.id,
+          attributeName: attributes.name,
+          valueId: attributeValues.id,
+          value: attributeValues.value,
+        })
+        .from(productAttributeValues)
+        .innerJoin(
+          attributes,
+          eq(productAttributeValues.attributeId, attributes.id)
+        )
+        .innerJoin(
+          attributeValues,
+          eq(productAttributeValues.attributeValueId, attributeValues.id)
+        )
+        .where(inArray(productAttributeValues.productId, ids));
+    }
 
     const groupedAttributes = attributeRows.reduce((acc, row) => {
       if (!acc[row.productId]) acc[row.productId] = [];
