@@ -573,6 +573,180 @@ async function seedDatabase() {
       new Date("2025-01-20")
     );
 
+    const order5 = await seedOrder(
+      "ORD-2025-0005",
+      "Mohamed Trabelsi",
+      "mohamed.trabelsi@example.com",
+      "+21698765432",
+      "Monastir",
+      "5000",
+      "15 Avenue de la Liberté",
+      "confirmed",
+      "devis",
+      false,
+      "2599.99",
+      "20.00",
+      "260.00",
+      "2879.99"
+    );
+
+    const order6 = await seedOrder(
+      "ORD-2025-0006",
+      "Fatma Ben Salem",
+      "fatma.bensalem@example.com",
+      "+21620987654",
+      "Bizerte",
+      "7000",
+      "88 Rue de la Corniche",
+      "cancelled",
+      "carte",
+      false,
+      "749.99",
+      "10.00",
+      "75.00",
+      "834.99"
+    );
+
+    const order7 = await seedOrder(
+      "ORD-2025-0007",
+      "David Wilson",
+      "david.wilson@example.com",
+      "+1555666777",
+      "Tunis",
+      "1002",
+      "42 Avenue de France",
+      "delivered",
+      "livraison",
+      true,
+      "1899.99",
+      "15.00",
+      "190.00",
+      "2104.99",
+      new Date("2025-01-18")
+    );
+
+    const order8 = await seedOrder(
+      "ORD-2025-0008",
+      "Leila Gharbi",
+      "leila.gharbi@example.com",
+      "+21655443322",
+      "Nabeul",
+      "8000",
+      "67 Avenue Habib Thameur",
+      "processing",
+      "carte",
+      true,
+      "1299.99",
+      "18.00",
+      "130.00",
+      "1447.99",
+      new Date("2025-01-22")
+    );
+
+    const order9 = await seedOrder(
+      "ORD-2025-0009",
+      "Robert Martinez",
+      "robert.m@example.com",
+      "+1888999000",
+      "Sousse",
+      "4002",
+      "23 Rue Hedi Chaker",
+      "pending",
+      "devis",
+      false,
+      "4599.98",
+      "30.00",
+      "460.00",
+      "5089.98"
+    );
+
+    const order10 = await seedOrder(
+      "ORD-2025-0010",
+      "Amira Kacem",
+      "amira.kacem@example.com",
+      "+21697531864",
+      "Sfax",
+      "3018",
+      "156 Avenue Ali Belhouane",
+      "shipped",
+      "livraison",
+      false,
+      "349.99",
+      "12.00",
+      "35.00",
+      "396.99"
+    );
+
+    const order11 = await seedOrder(
+      "ORD-2025-0011",
+      "Thomas Anderson",
+      "t.anderson@example.com",
+      "+1333444555",
+      "La Marsa",
+      "2070",
+      "99 Avenue Taieb Mhiri",
+      "delivered",
+      "carte",
+      true,
+      "599.99",
+      "10.00",
+      "60.00",
+      "669.99",
+      new Date("2025-01-16")
+    );
+
+    const order12 = await seedOrder(
+      "ORD-2025-0012",
+      "Salma Messaoudi",
+      "salma.messaoudi@example.com",
+      "+21623456789",
+      "Gabes",
+      "6000",
+      "34 Rue de la République",
+      "confirmed",
+      "carte",
+      true,
+      "2099.99",
+      "22.00",
+      "210.00",
+      "2331.99",
+      new Date("2025-01-23")
+    );
+
+    const order13 = await seedOrder(
+      "ORD-2025-0013",
+      "Michael Chen",
+      "m.chen@example.com",
+      "+1777888999",
+      "Hammamet",
+      "8050",
+      "12 Avenue de la Paix",
+      "processing",
+      "livraison",
+      false,
+      "3549.97",
+      "28.00",
+      "355.00",
+      "3932.97"
+    );
+
+    const order14 = await seedOrder(
+      "ORD-2025-0014",
+      "Nadia Jlassi",
+      "nadia.jlassi@example.com",
+      "+21641852963",
+      "Kairouan",
+      "3100",
+      "78 Avenue Ibn El Jazzar",
+      "pending",
+      "devis",
+      false,
+      "1349.98",
+      "18.00",
+      "135.00",
+      "1502.98"
+    );
+
     console.log("✔ Orders seeded");
 
     // -------------------------------
@@ -629,6 +803,42 @@ async function seedDatabase() {
     await seedOrderItem(order4.id, thinkpad.id, "ThinkPad X1 Carbon", "1899.99", 1, "1899.99");
     await seedOrderItem(order4.id, herman.id, "Herman Miller Aeron", "1299.99", 1, "1299.99");
 
+    // Order 5: MSI Gaming Laptop
+    await seedOrderItem(order5.id, msi.id, "MSI GE76 Raider", "2599.99", 1, "2599.99");
+
+    // Order 6: Samsung Galaxy Tab (cancelled order)
+    await seedOrderItem(order6.id, galaxy.id, "Samsung Galaxy Tab S9", "749.99", 1, "749.99");
+
+    // Order 7: ThinkPad only
+    await seedOrderItem(order7.id, thinkpad.id, "ThinkPad X1 Carbon", "1899.99", 1, "1899.99");
+
+    // Order 8: Herman Miller chair
+    await seedOrderItem(order8.id, herman.id, "Herman Miller Aeron", "1299.99", 1, "1299.99");
+
+    // Order 9: ASUS ROG + MSI (2 gaming laptops)
+    await seedOrderItem(order9.id, rog.id, "ASUS ROG Strix", "2299.99", 1, "2299.99");
+    await seedOrderItem(order9.id, msi.id, "MSI GE76 Raider", "2599.99", 1, "2599.99");
+
+    // Order 10: ErgoMax chair only
+    await seedOrderItem(order10.id, ergomax.id, "ErgoMax Pro", "349.99", 1, "349.99");
+
+    // Order 11: iPad only
+    await seedOrderItem(order11.id, ipad.id, "iPad Air", "599.99", 1, "599.99");
+
+    // Order 12: Dell Latitude
+    await seedOrderItem(order12.id, latitude.id, "Dell Latitude 9000", "2099.99", 1, "2099.99");
+
+    // Order 13: iPad + Galaxy Tab + ErgoMax (variety)
+    await seedOrderItem(order13.id, ipad.id, "iPad Air", "599.99", 1, "599.99");
+    await seedOrderItem(order13.id, galaxy.id, "Samsung Galaxy Tab S9", "749.99", 1, "749.99");
+    await seedOrderItem(order13.id, ergomax.id, "ErgoMax Pro", "349.99", 2, "699.99");
+    await seedOrderItem(order13.id, thinkpad.id, "ThinkPad X1 Carbon", "1899.99", 1, "1899.99");
+
+    // Order 14: ErgoMax + iPad
+    await seedOrderItem(order14.id, ergomax.id, "ErgoMax Pro", "349.99", 1, "349.99");
+    await seedOrderItem(order14.id, ipad.id, "iPad Air", "599.99", 1, "599.99");
+    await seedOrderItem(order14.id, galaxy.id, "Samsung Galaxy Tab S9", "749.99", 1, "749.99");
+
     console.log("✔ Order items seeded");
 
     // -------------------------------
@@ -682,6 +892,54 @@ async function seedDatabase() {
     await seedStatusHistory(order4.id, "pending", "confirmed", "admin@gmail.com");
     await seedStatusHistory(order4.id, "confirmed", "processing", "admin@gmail.com");
     await seedStatusHistory(order4.id, "processing", "shipped", "admin@gmail.com");
+
+    // Order 5 status history (confirmed)
+    await seedStatusHistory(order5.id, null, "pending", "System");
+    await seedStatusHistory(order5.id, "pending", "confirmed", "admin@gmail.com");
+
+    // Order 6 status history (cancelled)
+    await seedStatusHistory(order6.id, null, "pending", "System");
+    await seedStatusHistory(order6.id, "pending", "cancelled", "admin@gmail.com");
+
+    // Order 7 status history (delivered)
+    await seedStatusHistory(order7.id, null, "pending", "System");
+    await seedStatusHistory(order7.id, "pending", "confirmed", "admin@gmail.com");
+    await seedStatusHistory(order7.id, "confirmed", "processing", "admin@gmail.com");
+    await seedStatusHistory(order7.id, "processing", "shipped", "admin@gmail.com");
+    await seedStatusHistory(order7.id, "shipped", "delivered", "System");
+
+    // Order 8 status history (processing)
+    await seedStatusHistory(order8.id, null, "pending", "System");
+    await seedStatusHistory(order8.id, "pending", "confirmed", "admin@gmail.com");
+    await seedStatusHistory(order8.id, "confirmed", "processing", "admin@gmail.com");
+
+    // Order 9 status history (pending)
+    await seedStatusHistory(order9.id, null, "pending", "System");
+
+    // Order 10 status history (shipped)
+    await seedStatusHistory(order10.id, null, "pending", "System");
+    await seedStatusHistory(order10.id, "pending", "confirmed", "admin@gmail.com");
+    await seedStatusHistory(order10.id, "confirmed", "processing", "admin@gmail.com");
+    await seedStatusHistory(order10.id, "processing", "shipped", "admin@gmail.com");
+
+    // Order 11 status history (delivered)
+    await seedStatusHistory(order11.id, null, "pending", "System");
+    await seedStatusHistory(order11.id, "pending", "confirmed", "admin@gmail.com");
+    await seedStatusHistory(order11.id, "confirmed", "processing", "admin@gmail.com");
+    await seedStatusHistory(order11.id, "processing", "shipped", "admin@gmail.com");
+    await seedStatusHistory(order11.id, "shipped", "delivered", "System");
+
+    // Order 12 status history (confirmed)
+    await seedStatusHistory(order12.id, null, "pending", "System");
+    await seedStatusHistory(order12.id, "pending", "confirmed", "admin@gmail.com");
+
+    // Order 13 status history (processing)
+    await seedStatusHistory(order13.id, null, "pending", "System");
+    await seedStatusHistory(order13.id, "pending", "confirmed", "admin@gmail.com");
+    await seedStatusHistory(order13.id, "confirmed", "processing", "admin@gmail.com");
+
+    // Order 14 status history (pending)
+    await seedStatusHistory(order14.id, null, "pending", "System");
 
     console.log("✔ Order status history seeded");
 
