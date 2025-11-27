@@ -16,9 +16,11 @@ export class OrderController {
     const orders = await service.listOrders({
       status: req.query.status as string,
       customerEmail: req.query.customerEmail as string,
+      search: req.query.search as string,
       page: req.query.page ? Number(req.query.page) : 1,
       limit: req.query.limit ? Number(req.query.limit) : 10,
       sort: req.query.sort as string,
+      sortBy: req.query.sortBy as string,
     });
     res.json(orders);
   }

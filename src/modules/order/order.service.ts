@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, ilike, inArray, sql } from "drizzle-orm";
+import { and, asc, desc, eq, ilike, inArray, or, sql } from "drizzle-orm";
 import { CreateOrderInputType } from "./dto/order.dto";
 import { db } from "../../db/data-source";
 import { products } from "../../db/schema/product";
@@ -215,16 +215,20 @@ export class OrderService {
   async listOrders(query: {
     status?: string;
     customerEmail?: string;
+    search?: string;
     page?: number;
     limit?: number;
     sort?: string;
+    sortBy?: string;
   }) {
     const {
       status,
       customerEmail,
+      search,
       page = 1,
       limit = 10,
       sort = "newest",
+      sortBy,
     } = query;
     const offset = (page - 1) * limit;
 
@@ -238,14 +242,63 @@ export class OrderService {
       whereClause.push(ilike(orders.customerEmail, `%${customerEmail}%`));
     }
 
-    const orderBy =
-      sort === "oldest"
-        ? asc(orders.createdAt)
-        : sort === "price_high"
-        ? desc(orders.totalPrice)
-        : sort === "price_low"
-        ? asc(orders.totalPrice)
-        : desc(orders.createdAt);
+    // Search across multiple fields
+    if (search) {
+      const searchPattern = `%${search}%`;
+      whereClause.push(
+        or(
+          ilike(orders.orderNumber, searchPattern),
+          ilike(orders.customerName, searchPattern),
+          ilike(orders.customerEmail, searchPattern),
+          ilike(orders.customerPhone, searchPattern),
+          ilike(orders.city, searchPattern)
+        )
+      );
+    }
+
+    // Dynamic sorting with sortBy parameter
+    let orderBy;
+    if (sortBy) {
+      const direction = sort === "asc" ? asc : desc;
+      switch (sortBy) {
+        case "orderNumber":
+          orderBy = direction(orders.orderNumber);
+          break;
+        case "customerName":
+          orderBy = direction(orders.customerName);
+          break;
+        case "customerEmail":
+          orderBy = direction(orders.customerEmail);
+          break;
+        case "status":
+          orderBy = direction(orders.status);
+          break;
+        case "totalPrice":
+          orderBy = direction(orders.totalPrice);
+          break;
+        case "isPaid":
+          orderBy = direction(orders.isPaid);
+          break;
+        case "createdAt":
+          orderBy = direction(orders.createdAt);
+          break;
+        case "updatedAt":
+          orderBy = direction(orders.updatedAt);
+          break;
+        default:
+          orderBy = desc(orders.createdAt);
+      }
+    } else {
+      // Legacy sort parameter support
+      orderBy =
+        sort === "oldest"
+          ? asc(orders.createdAt)
+          : sort === "price_high"
+          ? desc(orders.totalPrice)
+          : sort === "price_low"
+          ? asc(orders.totalPrice)
+          : desc(orders.createdAt);
+    }
 
     const rows = await db
       .select()
