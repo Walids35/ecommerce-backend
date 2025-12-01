@@ -1,7 +1,7 @@
 // product.controller.ts
 import { Request, Response } from "express";
 import { ProductService } from "./product.service";
-import { CreateProductInput, UpdateProductInput } from "./dto/product.dto";
+import { CreateProductInput, updateProductDisplayOrderInput, UpdateProductInput } from "./dto/product.dto";
 import { sendSuccess, sendCreated, sendPaginated } from "../../utils/response";
 
 const service = new ProductService();
@@ -61,5 +61,12 @@ export class ProductController {
   async toggleActiveStatus(req: Request, res: Response) {
     const updatedProduct = await service.toggleActiveStatus(req.params.id);
     sendSuccess(res, updatedProduct, "Product status updated successfully");
+  }
+
+  async updateDisplayOrder(req: Request, res: Response) {
+    const parsed = updateProductDisplayOrderInput.parse(req.body);
+    const { displayOrder } = parsed;
+    const updatedProduct = await service.updateProductDisplayOrder(req.params.id, displayOrder);
+    sendSuccess(res, updatedProduct, "Product display order updated successfully");
   }
 }

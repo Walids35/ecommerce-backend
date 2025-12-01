@@ -389,6 +389,19 @@ export class ProductService {
     return updated;
   }
 
+  async updateProductDisplayOrder(id: string, displayOrder: number) {
+    const [updated] = await db
+      .update(products)
+      .set({
+        displayOrder: displayOrder,
+        updatedAt: new Date(),
+      })
+      .where(eq(products.id, id))
+      .returning();
+
+    return updated;
+  }
+
   // ---------------------------
   // DELETE (Soft Delete)
   // ---------------------------

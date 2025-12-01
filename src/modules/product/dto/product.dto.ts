@@ -54,5 +54,9 @@ export const UpdateProductInput = z.object({
     .optional(),
 });
 
+export const updateProductDisplayOrderInput = z.object({
+  displayOrder: z.number().int(),
+});
+
 export type CreateProductInputType = z.infer<typeof CreateProductInput>;
 export type UpdateProductInputType = z.infer<typeof UpdateProductInput>;
