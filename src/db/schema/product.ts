@@ -1,5 +1,5 @@
 import { relations, sql } from "drizzle-orm";
-import { bigint, bigserial, integer, numeric, pgTable, text, timestamp, uuid, varchar, check } from "drizzle-orm/pg-core";
+import { bigint, bigserial, boolean, integer, numeric, pgTable, text, timestamp, uuid, varchar, check } from "drizzle-orm/pg-core";
 import { subCategories, attributes, attributeValues } from "./subcategories";
 import { subSubCategories } from "./subsubcategories";
 
@@ -21,6 +21,8 @@ export const products = pgTable(
 
     images: text("images").array().notNull(),
     datasheet: text("datasheet"),
+    isActive: boolean("is_active").default(true).notNull(),
+    displayOrder: integer("display_order").default(0).notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
   },

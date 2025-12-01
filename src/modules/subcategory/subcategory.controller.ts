@@ -1,53 +1,38 @@
 import { Request, Response } from "express";
 import { SubCategoryService } from "./subcategory.service";
 import { CreateSubCategoryDto, UpdateSubCategoryDto } from "./dto/subcategory.dto";
+import { sendSuccess, sendCreated } from "../../utils/response";
 
 const service = new SubCategoryService();
 
 export class SubCategoryController {
   async create(req: Request, res: Response) {
-    try {
-      const body = CreateSubCategoryDto.parse(req.body);
-      const subCategory = await service.create(body);
-      res.status(201).json(subCategory);
-    } catch (err: any) {
-      res.status(400).json({ error: err.message });
-    }
+    const body = CreateSubCategoryDto.parse(req.body);
+    const subCategory = await service.create(body);
+    sendCreated(res, subCategory, "Subcategory created successfully");
   }
 
   async findAll(req: Request, res: Response) {
     const items = await service.findAll();
-    res.json(items);
+    sendSuccess(res, items, "Subcategories retrieved successfully");
   }
 
   async findOne(req: Request, res: Response) {
-    try {
-      const id = Number(req.params.id);
-      const item = await service.findById(id);
-      res.json(item);
-    } catch (err: any) {
-      res.status(404).json({ error: err.message });
-    }
+    const id = Number(req.params.id);
+    const item = await service.findById(id);
+    sendSuccess(res, item, "Subcategory retrieved successfully");
   }
 
   async update(req: Request, res: Response) {
-    try {
-      const id = Number(req.params.id);
-      const body = UpdateSubCategoryDto.parse(req.body);
-      const updated = await service.update(id, body);
-      res.json(updated);
-    } catch (err: any) {
-      res.status(400).json({ error: err.message });
-    }
+    const id = Number(req.params.id);
+    const body = UpdateSubCategoryDto.parse(req.body);
+    const updated = await service.update(id, body);
+    sendSuccess(res, updated, "Subcategory updated successfully");
   }
 
   async delete(req: Request, res: Response) {
-    try {
-      const id = Number(req.params.id);
-      const deleted = await service.delete(id);
-      res.json(deleted);
-    } catch (err: any) {
-      res.status(404).json({ error: err.message });
-    }
+    const id = Number(req.params.id);
+    const deleted = await service.delete(id);
+    sendSuccess(res, deleted, "Subcategory deleted successfully");
   }
 }

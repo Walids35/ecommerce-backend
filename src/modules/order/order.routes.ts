@@ -1,48 +1,15 @@
 import { Router } from "express";
 import { OrderController } from "./order.controller";
+import { asyncHandler } from "../../utils/asyncHandler";
 
 const router = Router();
 const controller = new OrderController();
 
 // Admin endpoints (JWT required)
-router.get("/", async (req, res, next) => {
-  try {
-    await controller.listOrders(req, res);
-  } catch (error) {
-    next(error);
-  }
-});
-
-router.get("/:id", async (req, res, next) => {
-  try {
-    await controller.getOrderById(req, res);
-  } catch (error) {
-    next(error);
-  }
-});
-
-router.patch("/:id/status", async (req, res, next) => {
-  try {
-    await controller.updateStatus(req, res);
-  } catch (error) {
-    next(error);
-  }
-});
-
-router.patch("/:id/payment", async (req, res, next) => {
-  try {
-    await controller.updatePayment(req, res);
-  } catch (error) {
-    next(error);
-  }
-});
-
-router.delete("/:id", async (req, res, next) => {
-  try {
-    await controller.deleteOrder(req, res);
-  } catch (error) {
-    next(error);
-  }
-});
+router.get("/", asyncHandler(controller.listOrders.bind(controller)));
+router.get("/:id", asyncHandler(controller.getOrderById.bind(controller)));
+router.patch("/:id/status", asyncHandler(controller.updateStatus.bind(controller)));
+router.patch("/:id/payment", asyncHandler(controller.updatePayment.bind(controller)));
+router.delete("/:id", asyncHandler(controller.deleteOrder.bind(controller)));
 
 export default router;

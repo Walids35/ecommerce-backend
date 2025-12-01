@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
+import { UnauthorizedError } from "../utils/errors";
 
 // Interface for our request with user info
 interface AuthRequest extends Request {
@@ -12,7 +13,7 @@ export const verifyJWT = (req: AuthRequest, res: Response, next: NextFunction) =
     const token = req.cookies?.token;
 
     if (!token) {
-      return res.status(401).json({ message: "Unauthorized: Token missing" });
+      throw new UnauthorizedError("Token missing");
     }
 
     // Verify token
@@ -24,6 +25,9 @@ export const verifyJWT = (req: AuthRequest, res: Response, next: NextFunction) =
 
     next();
   } catch (err) {
-    return res.status(401).json({ message: "Unauthorized: Invalid token" });
+    if (err instanceof UnauthorizedError) {
+      return next(err);
+    }
+    next(new UnauthorizedError("Invalid or expired token"));
   }
 };

@@ -13,6 +13,8 @@ export const CreateProductInput = z.object({
 
   images: z.array(z.string()).min(1),
   datasheet: z.string().optional(),
+  isActive: z.boolean().optional(),
+  displayOrder: z.number().int().optional(),
 
   attributes: z
     .array(
@@ -39,6 +41,8 @@ export const UpdateProductInput = z.object({
   discountPercentage: z.string().optional(),
   images: z.array(z.string()).optional(),
   datasheet: z.string().optional(),
+  isActive: z.boolean().optional(),
+  displayOrder: z.number().int().optional(),
 
   attributes: z
     .array(

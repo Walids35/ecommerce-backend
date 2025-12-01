@@ -254,7 +254,9 @@ async function seedDatabase() {
       subSubCategoryId?: number,
       images: string[] = [],
       datasheet: string | null = null,
-      discountPercentage: string = "0"
+      discountPercentage: string = "0",
+      isActive: boolean = true,
+      displayOrder: number = 0
     ) {
       const exists = await db
         .select()
@@ -283,6 +285,8 @@ async function seedDatabase() {
             images,
             datasheet,
             discountPercentage,
+            isActive,
+            displayOrder,
           })
           .returning()
       )[0];
@@ -298,7 +302,9 @@ async function seedDatabase() {
       gamingLaptopSub.id,
       ["rog.jpg"],
       null,
-      "5"
+      "5",
+      true,
+      1
     );
 
     const msi = await seedProduct(
@@ -308,7 +314,11 @@ async function seedDatabase() {
       15,
       undefined,
       gamingLaptopSub.id,
-      ["msi.jpg"]
+      ["msi.jpg"],
+      null,
+      "0",
+      true,
+      2
     );
 
     // Business Laptops (at subsubcategory level)
@@ -321,7 +331,9 @@ async function seedDatabase() {
       businessLaptopSub.id,
       ["thinkpad.jpg"],
       null,
-      "10"
+      "10",
+      true,
+      3
     );
 
     const latitude = await seedProduct(
@@ -331,7 +343,11 @@ async function seedDatabase() {
       30,
       undefined,
       businessLaptopSub.id,
-      ["latitude.jpg"]
+      ["latitude.jpg"],
+      null,
+      "0",
+      true,
+      4
     );
 
     // Tablets (at subcategory level - no subsubcategory)
@@ -342,7 +358,11 @@ async function seedDatabase() {
       80,
       tabletSub.id,
       undefined,
-      ["ipad.jpg"]
+      ["ipad.jpg"],
+      null,
+      "0",
+      true,
+      5
     );
 
     const galaxy = await seedProduct(
@@ -354,7 +374,9 @@ async function seedDatabase() {
       undefined,
       ["galaxy-tab.jpg"],
       null,
-      "15"
+      "15",
+      true,
+      6
     );
 
     // Chairs (at subcategory level)
@@ -365,7 +387,11 @@ async function seedDatabase() {
       50,
       chairSub.id,
       undefined,
-      ["ergomax.jpg"]
+      ["ergomax.jpg"],
+      null,
+      "0",
+      true,
+      7
     );
 
     const herman = await seedProduct(
@@ -375,7 +401,11 @@ async function seedDatabase() {
       20,
       chairSub.id,
       undefined,
-      ["aeron.jpg"]
+      ["aeron.jpg"],
+      null,
+      "0",
+      true,
+      8
     );
 
     console.log("✔ Products seeded");

@@ -2,12 +2,13 @@ import { eq } from 'drizzle-orm';
 import { db } from '../../db/data-source';
 import { user } from '../../db/schema/users';
 import bcrypt from 'bcrypt';
+import { NotFoundError, UnauthorizedError, ConflictError, InternalServerError } from '../../utils/errors';
 
 export const hashPassword = async (password: string): Promise<string> => {
     try {
         return await bcrypt.hash(password, 10);
     } catch (e) {
-        throw new Error('Error hashing');
+        throw new InternalServerError('Error hashing password');
     }
 }
 
@@ -15,7 +16,7 @@ export const comparePassword = async (password: string, hashedPassword: string):
   try {
     return await bcrypt.compare(password, hashedPassword);
   } catch (e) {
-    throw new Error('Error comparing password');
+    throw new InternalServerError('Error comparing password');
   }
 };
 
@@ -28,7 +29,7 @@ export const createUser = async ({ name, email, password, role = 'admin' } : { n
       .limit(1);
 
     if (existingUser.length > 0)
-      throw new Error('User with this email already exists');
+      throw new ConflictError('User with this email already exists');
 
     const password_hash = await hashPassword(password);
 
@@ -58,7 +59,7 @@ export const authenticateUser = async ({ email, password } : { email: string; pa
       .limit(1);
 
     if (!existingUser) {
-      throw new Error('User not found');
+      throw new UnauthorizedError('Invalid email or password');
     }
 
     const isPasswordValid = await comparePassword(
@@ -67,7 +68,7 @@ export const authenticateUser = async ({ email, password } : { email: string; pa
     );
 
     if (!isPasswordValid) {
-      throw new Error('Invalid password');
+      throw new UnauthorizedError('Invalid email or password');
     }
 
     return {

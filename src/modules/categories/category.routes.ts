@@ -1,13 +1,14 @@
 import { Router } from "express";
 import { CategoryController } from "./category.controller";
+import { asyncHandler } from "../../utils/asyncHandler";
 
 const router = Router();
 const controller = new CategoryController();
 
-router.get("/", (req, res) => controller.getAll(req, res));
-router.get("/:id", (req, res) => controller.getById(req, res));
-router.post("/", (req, res) => controller.create(req, res));
-router.put("/:id", (req, res) => controller.update(req, res));
-router.delete("/:id", (req, res) => controller.delete(req, res));
+router.get("/", asyncHandler(controller.getAll.bind(controller)));
+router.get("/:id", asyncHandler(controller.getById.bind(controller)));
+router.post("/", asyncHandler(controller.create.bind(controller)));
+router.put("/:id", asyncHandler(controller.update.bind(controller)));
+router.delete("/:id", asyncHandler(controller.delete.bind(controller)));
 
 export default router;

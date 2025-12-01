@@ -4,6 +4,7 @@ import {
   UpdateOrderStatusInput,
   UpdatePaymentStatusInput,
 } from "./dto/order.dto";
+import { sendSuccess, sendPaginated } from "../../utils/response";
 
 const service = new OrderService();
 
@@ -13,7 +14,7 @@ interface AuthRequest extends Request {
 
 export class OrderController {
   async listOrders(req: AuthRequest, res: Response) {
-    const orders = await service.listOrders({
+    const result = await service.listOrders({
       status: req.query.status as string,
       customerEmail: req.query.customerEmail as string,
       search: req.query.search as string,
@@ -22,13 +23,23 @@ export class OrderController {
       sort: req.query.sort as string,
       sortBy: req.query.sortBy as string,
     });
-    res.json(orders);
+
+    sendPaginated(
+      res,
+      result.orders,
+      {
+        page: result.page,
+        limit: result.limit,
+        total: result.total,
+      },
+      "Orders retrieved successfully"
+    );
   }
 
   async getOrderById(req: AuthRequest, res: Response) {
     const orderId = Number(req.params.id);
     const order = await service.getOrderById(orderId);
-    res.json(order);
+    sendSuccess(res, order, "Order retrieved successfully");
   }
 
   async updateStatus(req: AuthRequest, res: Response) {
@@ -41,19 +52,19 @@ export class OrderController {
       parsed.status,
       changedBy
     );
-    res.json(order);
+    sendSuccess(res, order, "Order status updated successfully");
   }
 
   async updatePayment(req: AuthRequest, res: Response) {
     const orderId = Number(req.params.id);
     const parsed = UpdatePaymentStatusInput.parse(req.body);
     const order = await service.updatePaymentStatus(orderId, parsed.isPaid);
-    res.json(order);
+    sendSuccess(res, order, "Payment status updated successfully");
   }
 
   async deleteOrder(req: AuthRequest, res: Response) {
     const orderId = Number(req.params.id);
     await service.deleteOrder(orderId);
-    res.json({ message: "Order deleted successfully" });
+    sendSuccess(res, null, "Order deleted successfully");
   }
 }

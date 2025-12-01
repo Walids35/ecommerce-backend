@@ -1,37 +1,33 @@
 import { Request, Response } from "express";
 import { CategoryService } from "./category.service";
 import { createCategoryDto, updateCategoryDto } from "./dto/categories.dto";
-
+import { sendSuccess, sendCreated } from "../../utils/response";
+import { NotFoundError, ValidationError } from "../../utils/errors";
 
 const categoryService = new CategoryService();
 
 export class CategoryController {
   async getAll(req: Request, res: Response) {
     const data = await categoryService.getAll();
-    res.json(data);
+    sendSuccess(res, data, "Categories retrieved successfully");
   }
 
   async getById(req: Request, res: Response) {
     const id = Number(req.params.id);
-
     const found = await categoryService.getById(id);
-    if (!found) return res.status(404).json({ message: "Category not found" });
+    if (!found) throw new NotFoundError("Category not found");
 
-    res.json(found);
+    sendSuccess(res, found, "Category retrieved successfully");
   }
 
   async create(req: Request, res: Response) {
     const parse = createCategoryDto.safeParse(req.body);
     if (!parse.success) {
-      return res.status(400).json({ errors: parse.error.flatten() });
+      throw new ValidationError("Validation failed", parse.error.flatten());
     }
 
-    try {
-      const created = await categoryService.create(parse.data);
-      res.status(201).json(created);
-    } catch (error: any) {
-      return res.status(400).json({ message: error.message });
-    }
+    const created = await categoryService.create(parse.data);
+    sendCreated(res, created, "Category created successfully");
   }
 
   async update(req: Request, res: Response) {
@@ -39,25 +35,16 @@ export class CategoryController {
     const parse = updateCategoryDto.safeParse(req.body);
 
     if (!parse.success) {
-      return res.status(400).json({ errors: parse.error.flatten() });
+      throw new ValidationError("Validation failed", parse.error.flatten());
     }
 
-    try {
-      const updated = await categoryService.update(id, parse.data);
-      res.json(updated);
-    } catch (error: any) {
-      return res.status(400).json({ message: error.message });
-    }
+    const updated = await categoryService.update(id, parse.data);
+    sendSuccess(res, updated, "Category updated successfully");
   }
 
   async delete(req: Request, res: Response) {
     const id = Number(req.params.id);
-
-    try {
-      const result = await categoryService.delete(id);
-      res.json(result);
-    } catch (error: any) {
-      return res.status(400).json({ message: error.message });
-    }
+    const result = await categoryService.delete(id);
+    sendSuccess(res, result, "Category deleted successfully");
   }
 }

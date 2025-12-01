@@ -11,7 +11,7 @@ export function signToken(payload: any) {
     throw new Error("JWT_SECRET and JWT_EXPIRES_IN must be provided");
   }
   const options: jwt.SignOptions = { expiresIn: expiresIn as jwt.SignOptions['expiresIn'] };
-  return jwt.sign(payload, secret as jwt.Secret, options);
+  return jwt.sign(payload, secret as jwt.Secret, { expiresIn: Date.now() + 15 * 60 * 1000 });
 }
 
 export function signPermenantToken(payload: any) {

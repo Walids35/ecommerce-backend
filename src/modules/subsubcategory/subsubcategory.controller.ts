@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { SubSubCategoryService } from "./subsubcategory.service";
 import { CreateSubSubCategoryDto, UpdateSubSubCategoryDto } from "./dto/subsubcategory.dto";
+import { sendCreated, sendSuccess } from "../../utils/response";
 
 const service = new SubSubCategoryService();
 
@@ -9,7 +10,7 @@ export class SubSubCategoryController {
     try {
       const data = CreateSubSubCategoryDto.parse(req.body);
       const result = await service.create(data);
-      res.status(201).json(result);
+      sendCreated(res, result, "Subsubcategory created successfully");
     } catch (error) {
       next(error);
     }
@@ -18,7 +19,7 @@ export class SubSubCategoryController {
   async getAll(req: Request, res: Response, next: NextFunction) {
     try {
       const result = await service.findAll();
-      res.json(result);
+      sendSuccess(res, result, "Subsubcategories retrieved successfully");
     } catch (error) {
       next(error);
     }
@@ -28,7 +29,7 @@ export class SubSubCategoryController {
     try {
       const id = Number(req.params.id);
       const result = await service.findById(id);
-      res.json(result);
+      sendSuccess(res, result, "Subsubcategory retrieved successfully");
     } catch (error) {
       next(error);
     }
@@ -38,7 +39,7 @@ export class SubSubCategoryController {
     try {
       const subCategoryId = Number(req.params.subCategoryId);
       const result = await service.findBySubCategoryId(subCategoryId);
-      res.json(result);
+      sendSuccess(res, result, "Subsubcategories retrieved successfully");
     } catch (error) {
       next(error);
     }
@@ -48,7 +49,7 @@ export class SubSubCategoryController {
     try {
       const { slug } = req.params;
       const result = await service.findBySlug(slug);
-      res.json(result);
+      sendSuccess(res, result, "Subsubcategory retrieved successfully");
     } catch (error) {
       next(error);
     }
@@ -59,7 +60,7 @@ export class SubSubCategoryController {
       const id = Number(req.params.id);
       const data = UpdateSubSubCategoryDto.parse(req.body);
       const result = await service.update(id, data);
-      res.json(result);
+      sendSuccess(res, result, "Subsubcategory updated successfully");
     } catch (error) {
       next(error);
     }
@@ -69,7 +70,7 @@ export class SubSubCategoryController {
     try {
       const id = Number(req.params.id);
       const result = await service.delete(id);
-      res.json({ message: "Subsubcategory deleted successfully", data: result });
+      sendSuccess(res, result, "Subsubcategory deleted successfully");
     } catch (error) {
       next(error);
     }

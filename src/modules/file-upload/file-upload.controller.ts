@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { UploadService } from './file-upload.service';
 import { DeleteResponseDto, UploadResponseDto } from './dto/file-upload.dto';
+import { sendSuccess } from '../../utils/response';
 
 export class UploadController {
   private uploadService: UploadService;
@@ -30,11 +31,7 @@ export class UploadController {
 
       const result = await this.uploadService.uploadFile(req.file, options);
 
-      res.status(200).json({
-        success: true,
-        message: 'File uploaded successfully',
-        data: result
-      } as UploadResponseDto);
+      sendSuccess(res, result, 'File uploaded successfully');
     } catch (error) {
       res.status(500).json({
         success: false,

@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { AttributeService } from "./attribute.service";
 import { CreateAttributeSchema, UpdateAttributeSchema, CreateAttributeValueSchema } from "./dto/attribute.dto";
+import { sendCreated, sendError, sendSuccess } from "../../utils/response";
 
 const service = new AttributeService();
 
@@ -11,7 +12,7 @@ export class AttributeController {
     try {
       const data = CreateAttributeSchema.parse(req.body);
       const result = await service.create(data);
-      res.status(201).json(result);
+      sendCreated(res, result, "Attribute created successfully");
     } catch (error) {
       next(error);
     }
@@ -20,7 +21,7 @@ export class AttributeController {
   async getAll(req: Request, res: Response, next: NextFunction) {
     try {
       const result = await service.findAll();
-      res.json(result);
+      sendSuccess(res, result, "Attributes retrieved successfully");
     } catch (error) {
       next(error);
     }
@@ -30,7 +31,7 @@ export class AttributeController {
     try {
       const id = Number(req.params.id);
       const result = await service.findById(id);
-      res.json(result);
+      sendSuccess(res, result, "Attribute retrieved successfully");
     } catch (error) {
       next(error);
     }
@@ -42,11 +43,11 @@ export class AttributeController {
       const parentType = req.query.type as "subcategory" | "subsubcategory";
 
       if (!parentType || (parentType !== "subcategory" && parentType !== "subsubcategory")) {
-        return res.status(400).json({ error: "Query parameter 'type' must be 'subcategory' or 'subsubcategory'" });
+        return sendError(res, "Query parameter 'type' must be 'subcategory' or 'subsubcategory'", 400);
       }
 
       const result = await service.findByParentId(parentId, parentType);
-      res.json(result);
+      sendSuccess(res, result, "Attributes retrieved successfully");
     } catch (error) {
       next(error);
     }
@@ -67,7 +68,7 @@ export class AttributeController {
     try {
       const id = Number(req.params.id);
       const result = await service.delete(id);
-      res.json({ message: "Attribute deleted successfully", data: result });
+      sendSuccess(res, result, "Attribute deleted successfully");
     } catch (error) {
       next(error);
     }
@@ -79,7 +80,7 @@ export class AttributeController {
     try {
       const data = CreateAttributeValueSchema.parse(req.body);
       const result = await service.addValue(data);
-      res.status(201).json(result);
+      sendCreated(res, result, "Attribute value added successfully");
     } catch (error) {
       next(error);
     }
@@ -89,7 +90,7 @@ export class AttributeController {
     try {
       const attributeId = Number(req.params.attributeId);
       const result = await service.getValuesByAttribute(attributeId);
-      res.json(result);
+      sendSuccess(res, result, "Attribute values retrieved successfully");
     } catch (error) {
       next(error);
     }
@@ -99,7 +100,7 @@ export class AttributeController {
     try {
       const valueId = Number(req.params.valueId);
       const result = await service.deleteValue(valueId);
-      res.json({ message: "Attribute value deleted successfully", data: result });
+      sendSuccess(res, result, "Attribute value deleted successfully");
     } catch (error) {
       next(error);
     }
@@ -111,11 +112,11 @@ export class AttributeController {
       const parentType = req.query.type as "subcategory" | "subsubcategory";
 
       if (!parentType || (parentType !== "subcategory" && parentType !== "subsubcategory")) {
-        return res.status(400).json({ error: "Query parameter 'type' must be 'subcategory' or 'subsubcategory'" });
+        return sendError(res, "Query parameter 'type' must be 'subcategory' or 'subsubcategory'", 400);
       }
 
       const result = await service.getAttributesWithValuesByParent(parentId, parentType);
-      res.json(result);
+      sendSuccess(res, result, "Attributes with values retrieved successfully");
     } catch (error) {
       next(error);
     }

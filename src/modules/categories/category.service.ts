@@ -2,6 +2,7 @@ import { eq, sql } from "drizzle-orm";
 import { db } from "../../db/data-source";
 import { categories } from "../../db/schema/categories";
 import { subCategories } from "../../db/schema/subcategories";
+import { NotFoundError, ConflictError, BadRequestError } from "../../utils/errors";
 
 export class CategoryService {
   async getAll() {
@@ -29,7 +30,7 @@ export class CategoryService {
       .where(eq(categories.slug, slug))
       .limit(1);
 
-    if (result.length === 0) throw new Error("Category not found");
+    if (result.length === 0) throw new NotFoundError("Category not found");
     return result[0];
   }
 
@@ -47,7 +48,7 @@ export class CategoryService {
       .where(eq(categories.name, data.name))
       .limit(1);
 
-    if (existingName.length > 0) throw new Error("Category name already exists");
+    if (existingName.length > 0) throw new ConflictError("Category name already exists");
 
     // Check slug uniqueness
     const existingSlug = await db
@@ -56,7 +57,7 @@ export class CategoryService {
       .where(eq(categories.slug, data.slug))
       .limit(1);
 
-    if (existingSlug.length > 0) throw new Error("Slug already exists");
+    if (existingSlug.length > 0) throw new ConflictError("Slug already exists");
 
     const result = await db
       .insert(categories)
@@ -83,7 +84,7 @@ export class CategoryService {
     }>
   ) {
     const existing = await this.getById(id);
-    if (!existing) throw new Error("Category not found");
+    if (!existing) throw new NotFoundError("Category not found");
 
     // Check slug uniqueness if being updated
     if (data.slug) {
@@ -94,7 +95,7 @@ export class CategoryService {
         .limit(1);
 
       if (existingSlug.length > 0 && existingSlug[0].id !== id) {
-        throw new Error("Slug already exists");
+        throw new ConflictError("Slug already exists");
       }
     }
 
@@ -119,7 +120,7 @@ export class CategoryService {
 
   async delete(id: number) {
     const existing = await this.getById(id);
-    if (!existing) throw new Error("Category not found");
+    if (!existing) throw new NotFoundError("Category not found");
 
     // Check if category has subcategories
     const subcats = await db
@@ -128,7 +129,7 @@ export class CategoryService {
       .where(eq(subCategories.categoryId, id));
 
     if (subcats[0].count > 0) {
-      throw new Error("Cannot delete category with subcategories");
+      throw new BadRequestError("Cannot delete category with subcategories");
     }
 
     await db.delete(categories).where(eq(categories.id, id));

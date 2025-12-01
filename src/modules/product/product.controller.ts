@@ -2,6 +2,7 @@
 import { Request, Response } from "express";
 import { ProductService } from "./product.service";
 import { CreateProductInput, UpdateProductInput } from "./dto/product.dto";
+import { sendSuccess, sendCreated, sendPaginated } from "../../utils/response";
 
 const service = new ProductService();
 
@@ -9,41 +10,56 @@ export class ProductController {
   async create(req: Request, res: Response) {
     const parsed = CreateProductInput.parse(req.body);
     const product = await service.create(parsed);
-    res.json(product);
+    sendCreated(res, product, "Product created successfully");
   }
 
   async findById(req: Request, res: Response) {
     const product = await service.findById(req.params.id);
-    res.json(product);
+    sendSuccess(res, product, "Product retrieved successfully");
   }
 
   async update(req: Request, res: Response) {
     const parsed = UpdateProductInput.parse(req.body);
     const updated = await service.update(req.params.id, parsed);
-    res.json(updated);
+    sendSuccess(res, updated, "Product updated successfully");
   }
 
   async delete(req: Request, res: Response) {
     const deleted = await service.delete(req.params.id);
-    res.json(deleted);
+    sendSuccess(res, deleted, "Product deleted successfully");
   }
 
   async findAll(req: Request, res: Response) {
     const products = await service.findAll();
-    res.json(products);
+    sendSuccess(res, products, "Products retrieved successfully");
   }
 
   async findAllWithSearch(req: Request, res: Response) {
-    const products = await service.findAllWithSearch({
+    const result = await service.findAllWithSearch({
       search: req.query.search as string,
       subCategoryId: req.query.subCategoryId ? Number(req.query.subCategoryId) : undefined,
       subSubCategoryId: req.query.subSubCategoryId ? Number(req.query.subSubCategoryId) : undefined,
+      isActive: req.query.isActive ? req.query.isActive === 'true' : true,
       page: req.query.page ? Number(req.query.page) : 1,
       limit: req.query.limit ? Number(req.query.limit) : 10,
       sort: req.query.sort as string,
       sortBy: req.query.sortBy as string,
     });
 
-    res.json(products);
+    sendPaginated(
+      res,
+      result.data,
+      {
+        page: result.page,
+        limit: result.limit,
+        total: result.total,
+      },
+      "Products retrieved successfully"
+    );
+  }
+
+  async toggleActiveStatus(req: Request, res: Response) {
+    const updatedProduct = await service.toggleActiveStatus(req.params.id);
+    sendSuccess(res, updatedProduct, "Product status updated successfully");
   }
 }

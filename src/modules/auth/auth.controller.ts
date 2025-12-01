@@ -1,103 +1,77 @@
-import { Request, Response, NextFunction } from "express";
+import { Request, Response } from "express";
 import { loginSchema } from "./dto/login.dto";
-import { formatValidationError } from "../../utils/format";
 import { authenticateUser } from "./auth.service";
 import { cookies, signToken, verifyToken } from "./jwt.utils";
+import { sendSuccess } from "../../utils/response";
+import { UnauthorizedError, ValidationError } from "../../utils/errors";
 
-export const login = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const validationResult = await loginSchema.safeParse(req.body);
+export const login = async (req: Request, res: Response) => {
+    const validationResult = await loginSchema.safeParse(req.body);
 
-        if (!validationResult.success) {
-            return res.status(400).json({
-                error: 'Validation failed',
-                details: formatValidationError(validationResult.error),
-            });
-        }
+    if (!validationResult.success) {
+        throw new ValidationError('Validation failed', validationResult.error.issues);
+    }
 
-        const { email, password } = validationResult.data;
+    const { email, password } = validationResult.data;
 
-        const user = await authenticateUser({ email, password });
+    const user = await authenticateUser({ email, password });
 
-        const token = signToken({
-            id: user.id,
-            email: user.email,
-            role: user.role,
-            name: user.name,
-        });
+    const token = signToken({
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        name: user.name,
+    });
 
-        cookies.set(res, 'token', token);
+    cookies.set(res, 'token', token);
 
-        res.status(200).json({
-            message: 'User signed in successfully',
+    sendSuccess(
+        res,
+        {
             user: {
                 id: user.id,
                 name: user.name,
                 email: user.email,
                 role: user.role,
             },
-        });
-    }
-    catch (e) {
-        next(e);
-        throw new Error('Internal server error');
-    }
+        },
+        'User signed in successfully'
+    );
 };
 
-export const signOut = async (req: Request, res: Response, next: NextFunction) => {
-  try {
+export const signOut = async (req: Request, res: Response) => {
     cookies.clear(res, 'token');
-    res.status(200).json({
-      message: 'User signed out successfully',
-    });
-  } catch (e) {
-    res.status(500).json({
-      error: 'Internal server error',
-    });
-    next(e);
-  }
+    sendSuccess(res, null, 'User signed out successfully');
 };
 
-export const verifyTokenization = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const token = cookies.get(req, 'token');
+export const verifyTokenization = async (req: Request, res: Response) => {
+    const token = cookies.get(req, 'token');
 
-        if (!token) {
-            return res.status(401).json({
-                error: 'Access denied',
-                message: 'No token provided',
-            });
-        }
+    if (!token) {
+        throw new UnauthorizedError('No token provided');
+    }
 
-        const decoded = verifyToken(token) as {
-            id: string;
-            email: string;
-            role: string;
-            name: string;
-        };
+    const decoded = verifyToken(token) as {
+        id: string;
+        email: string;
+        role: string;
+        name: string;
+    };
 
-        if (!decoded || !decoded.id || !decoded.email) {
-            return res.status(401).json({
-                error: 'Access denied',
-                message: 'Invalid token payload',
-            });
-        }
+    if (!decoded || !decoded.id || !decoded.email) {
+        throw new UnauthorizedError('Invalid token payload');
+    }
 
-        res.status(200).json({
-            success: true,
-            message: 'Token is valid',
+    sendSuccess(
+        res,
+        {
             user: {
                 id: decoded.id,
                 email: decoded.email,
                 role: decoded.role,
                 name: decoded.name,
             },
-        });
-    } catch (error) {
-        console.error('Token verification error:', error);
-        return res.status(401).json({
-            error: 'Access denied',
-            message: 'Invalid or expired token',
-        });
-    }
+        },
+        'Token is valid'
+    );
 };

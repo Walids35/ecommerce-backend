@@ -7,6 +7,7 @@ import { db } from "../../db/data-source";
 import { subCategories, attributes, attributeValues } from "../../db/schema/subcategories";
 import { subSubCategories } from "../../db/schema/subsubcategories";
 import { productAttributeValues, products } from "../../db/schema/product";
+import { NotFoundError, BadRequestError } from "../../utils/errors";
 
 export class ProductService {
   // ---------------------------
@@ -21,7 +22,7 @@ export class ProductService {
         .where(eq(subCategories.id, data.subCategoryId))
         .limit(1);
 
-      if (!subcategory.length) throw new Error("Subcategory not found");
+      if (!subcategory.length) throw new NotFoundError("Subcategory not found");
     } else if (data.subSubCategoryId) {
       const subsubcategory = await db
         .select()
@@ -29,9 +30,9 @@ export class ProductService {
         .where(eq(subSubCategories.id, data.subSubCategoryId))
         .limit(1);
 
-      if (!subsubcategory.length) throw new Error("Subsubcategory not found");
+      if (!subsubcategory.length) throw new NotFoundError("Subsubcategory not found");
     } else {
-      throw new Error("Either subCategoryId or subSubCategoryId must be provided");
+      throw new BadRequestError("Either subCategoryId or subSubCategoryId must be provided");
     }
 
     // Insert base product
@@ -47,6 +48,8 @@ export class ProductService {
         subSubCategoryId: data.subSubCategoryId ?? null,
         images: data.images,
         datasheet: data.datasheet,
+        isActive: data.isActive ?? true,
+        displayOrder: data.displayOrder ?? 0,
       })
       .returning();
 
@@ -79,20 +82,20 @@ export class ProductService {
         .limit(1);
 
       if (!attributeCheck.length) {
-        throw new Error(`Attribute ${attr.attributeId} not found`);
+        throw new NotFoundError(`Attribute ${attr.attributeId} not found`);
       }
 
       const attribute = attributeCheck[0];
 
       // Validate attribute belongs to correct parent
       if (subCategoryId && attribute.subCategoryId !== subCategoryId) {
-        throw new Error(
+        throw new BadRequestError(
           `Attribute ${attr.attributeId} does not belong to subcategory ${subCategoryId}`
         );
       }
 
       if (subSubCategoryId && attribute.subSubCategoryId !== subSubCategoryId) {
-        throw new Error(
+        throw new BadRequestError(
           `Attribute ${attr.attributeId} does not belong to subsubcategory ${subSubCategoryId}`
         );
       }
@@ -110,7 +113,7 @@ export class ProductService {
         .limit(1);
 
       if (!valueCheck.length) {
-        throw new Error(
+        throw new BadRequestError(
           `Attribute value ${attr.attributeValueId} is invalid for attribute ${attr.attributeId}`
         );
       }
@@ -130,6 +133,7 @@ export class ProductService {
     search?: string;
     subCategoryId?: number;
     subSubCategoryId?: number;
+    isActive?: boolean;
     page?: number;
     limit?: number;
     sort?: string;
@@ -139,6 +143,7 @@ export class ProductService {
       search,
       subCategoryId,
       subSubCategoryId,
+      isActive,
       page = 1,
       limit = 10,
       sort = "newest",
@@ -166,6 +171,10 @@ export class ProductService {
       whereClause.push(eq(products.subSubCategoryId, subSubCategoryId));
     }
 
+    // Filter by isActive (defaults to true for backward compatibility)
+    const activeFilter = isActive ?? true;
+    whereClause.push(eq(products.isActive, activeFilter));
+
     // Dynamic sorting with sortBy parameter
     let orderBy;
     if (sortBy) {
@@ -189,8 +198,11 @@ export class ProductService {
         case "updatedAt":
           orderBy = direction(products.updatedAt);
           break;
+        case "displayOrder":
+          orderBy = direction(products.displayOrder);
+          break;
         default:
-          orderBy = desc(products.createdAt);
+          orderBy = [asc(products.displayOrder), desc(products.createdAt)];
       }
     } else {
       // Legacy sort parameter support
@@ -199,14 +211,20 @@ export class ProductService {
           ? asc(products.price)
           : sort === "price_desc"
           ? desc(products.price)
-          : desc(products.createdAt);
+          : [asc(products.displayOrder), desc(products.createdAt)];
     }
 
-    const rows = await db
+    const baseQuery = db
       .select()
       .from(products)
-      .where(whereClause.length ? and(...whereClause) : undefined)
-      .orderBy(orderBy)
+      .where(whereClause.length ? and(...whereClause) : undefined);
+
+    // Apply ordering
+    const orderedQuery = Array.isArray(orderBy)
+      ? baseQuery.orderBy(...orderBy)
+      : baseQuery.orderBy(orderBy);
+
+    const rows = await orderedQuery
       .limit(limit)
       .offset(offset);
 
@@ -265,7 +283,7 @@ export class ProductService {
   }
 
   async findAll() {
-    const rows = await db.select().from(products).orderBy(desc(products.createdAt));
+    const rows = await db.select().from(products).orderBy(asc(products.displayOrder), desc(products.createdAt));
     return rows;
   }
 
@@ -279,7 +297,7 @@ export class ProductService {
       .where(eq(products.id, id))
       .limit(1);
 
-    if (!rows.length) throw new Error("Product not found");
+    if (!rows.length) throw new NotFoundError("Product not found");
 
     const product = rows[0];
 
@@ -330,6 +348,8 @@ export class ProductService {
       payload.discountPercentage = data.discountPercentage;
     if (data.images !== undefined) payload.images = data.images;
     if (data.datasheet !== undefined) payload.datasheet = data.datasheet;
+    if (data.isActive !== undefined) payload.isActive = data.isActive;
+    if (data.displayOrder !== undefined) payload.displayOrder = data.displayOrder;
 
     const [updated] = await db
       .update(products)
@@ -354,14 +374,33 @@ export class ProductService {
     return updated;
   }
 
+  async toggleActiveStatus(id: string) {
+    const existing = await this.findById(id);
+
+    const [updated] = await db
+      .update(products)
+      .set({
+        isActive: !existing.isActive,
+        updatedAt: new Date(),
+      })
+      .where(eq(products.id, id))
+      .returning();
+
+    return updated;
+  }
+
   // ---------------------------
-  // DELETE
+  // DELETE (Soft Delete)
   // ---------------------------
   async delete(id: string) {
     await this.findById(id);
 
     const [deleted] = await db
-      .delete(products)
+      .update(products)
+      .set({
+        isActive: false,
+        updatedAt: new Date(),
+      })
       .where(eq(products.id, id))
       .returning();
 

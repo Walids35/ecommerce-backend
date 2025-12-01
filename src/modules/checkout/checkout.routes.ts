@@ -1,24 +1,12 @@
 import { Router } from "express";
 import { CheckoutController } from "./checkout.controller";
+import { asyncHandler } from "../../utils/asyncHandler";
 
 const router = Router();
 const controller = new CheckoutController();
 
 // Public endpoints
-router.post("/", async (req, res, next) => {
-  try {
-    await controller.createOrder(req, res);
-  } catch (error) {
-    next(error);
-  }
-});
-
-router.get("/:orderNumber", async (req, res, next) => {
-  try {
-    await controller.getOrderByNumber(req, res);
-  } catch (error) {
-    next(error);
-  }
-});
+router.post("/", asyncHandler(controller.createOrder.bind(controller)));
+router.get("/:orderNumber", asyncHandler(controller.getOrderByNumber.bind(controller)));
 
 export default router;

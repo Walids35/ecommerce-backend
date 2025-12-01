@@ -8,6 +8,7 @@ import {
   orderStatusHistory,
 } from "../../db/schema/orders";
 import crypto from "crypto";
+import { NotFoundError, BadRequestError } from "../../utils/errors";
 
 export class OrderService {
   // Helper: Generate unique order number
@@ -45,11 +46,11 @@ export class OrderService {
         .limit(1);
 
       if (!product) {
-        throw new Error(`Product ${item.productId} not found`);
+        throw new NotFoundError(`Product ${item.productId} not found`);
       }
 
       if (product.stock < item.quantity) {
-        throw new Error(
+        throw new BadRequestError(
           `Insufficient stock for ${product.name}. Available: ${product.stock}, Requested: ${item.quantity}`
         );
       }
@@ -68,7 +69,7 @@ export class OrderService {
       .where(inArray(products.id, productIds));
 
     if (fetchedProducts.length !== items.length) {
-      throw new Error("One or more products not found");
+      throw new NotFoundError("One or more products not found");
     }
 
     let calculatedSubtotal = 0;
@@ -76,7 +77,7 @@ export class OrderService {
 
     for (const item of items) {
       const product = productMap.get(item.productId);
-      if (!product) throw new Error(`Product ${item.productId} not found`);
+      if (!product) throw new NotFoundError(`Product ${item.productId} not found`);
 
       const price = parseFloat(product.price);
       calculatedSubtotal += price * item.quantity;
@@ -85,7 +86,7 @@ export class OrderService {
     // Validate (allow 0.01 tolerance for floating point)
     const providedNum = parseFloat(providedSubtotal);
     if (Math.abs(calculatedSubtotal - providedNum) > 0.01) {
-      throw new Error(
+      throw new BadRequestError(
         `Subtotal mismatch: calculated ${calculatedSubtotal.toFixed(2)}, provided ${providedSubtotal}`
       );
     }
@@ -94,6 +95,77 @@ export class OrderService {
       products: fetchedProducts,
       calculatedSubtotal: calculatedSubtotal.toFixed(2),
     };
+  }
+
+  // Helper: Decrement stock for order items
+  private async decrementStock(tx: any, orderId: number): Promise<void> {
+    // Fetch order items for this order
+    const items = await tx
+      .select()
+      .from(orderItems)
+      .where(eq(orderItems.orderId, orderId));
+
+    if (items.length === 0) {
+      throw new BadRequestError("No order items found for stock decrement");
+    }
+
+    // Decrement stock for each product
+    for (const item of items) {
+      // First, check if stock is sufficient
+      const [product] = await tx
+        .select()
+        .from(products)
+        .where(eq(products.id, item.productId))
+        .limit(1);
+
+      if (!product) {
+        throw new NotFoundError(`Product ${item.productId} not found`);
+      }
+
+      if (product.stock < item.quantity) {
+        throw new BadRequestError(
+          `Insufficient stock for ${product.name}. Available: ${product.stock}, Required: ${item.quantity}`
+        );
+      }
+
+      // Decrement stock atomically
+      await tx
+        .update(products)
+        .set({
+          stock: sql`${products.stock} - ${item.quantity}`,
+          updatedAt: new Date(),
+        })
+        .where(eq(products.id, item.productId));
+    }
+  }
+
+  // Helper: Restore stock for order items
+  private async restoreStock(tx: any, orderId: number): Promise<void> {
+    // Fetch order items for this order
+    const items = await tx
+      .select()
+      .from(orderItems)
+      .where(eq(orderItems.orderId, orderId));
+
+    if (items.length === 0) {
+      throw new BadRequestError("No order items found for stock restoration");
+    }
+
+    // Restore stock for each product
+    for (const item of items) {
+      await tx
+        .update(products)
+        .set({
+          stock: sql`${products.stock} + ${item.quantity}`,
+          updatedAt: new Date(),
+        })
+        .where(eq(products.id, item.productId));
+    }
+  }
+
+  // Helper: Check if payment method requires immediate stock decrement
+  private shouldDecrementStockOnCreate(paymentMethod: string): boolean {
+    return paymentMethod === "livraison" || paymentMethod === "carte";
   }
 
   // Main: Create order (checkout)
@@ -158,15 +230,11 @@ export class OrderService {
           quantity: item.quantity,
           subtotal: itemSubtotal,
         });
+      }
 
-        // Decrement stock
-        await tx
-          .update(products)
-          .set({
-            stock: sql`${products.stock} - ${item.quantity}`,
-            updatedAt: new Date(),
-          })
-          .where(eq(products.id, item.productId));
+      // Conditional stock decrement - only for livraison and carte, not for devis
+      if (this.shouldDecrementStockOnCreate(data.paymentMethod)) {
+        await this.decrementStock(tx, order.id);
       }
 
       // Create initial status history
@@ -189,7 +257,7 @@ export class OrderService {
       .where(eq(orders.orderNumber, orderNumber))
       .limit(1);
 
-    if (!order) throw new Error("Order not found");
+    if (!order) throw new NotFoundError("Order not found");
 
     // Fetch items
     const items = await db
@@ -329,7 +397,7 @@ export class OrderService {
       .where(eq(orders.id, id))
       .limit(1);
 
-    if (!order) throw new Error("Order not found");
+    if (!order) throw new NotFoundError("Order not found");
 
     const items = await db
       .select()
@@ -355,9 +423,54 @@ export class OrderService {
         .where(eq(orders.id, orderId))
         .limit(1);
 
-      if (!currentOrder) throw new Error("Order not found");
+      if (!currentOrder) throw new NotFoundError("Order not found");
 
       const oldStatus = currentOrder.status;
+      const paymentMethod = currentOrder.paymentMethod;
+
+      // Prevent no-op updates
+      if (oldStatus === newStatus) {
+        throw new BadRequestError(`Order is already in ${newStatus} status`);
+      }
+
+      // --- STOCK MANAGEMENT LOGIC ---
+
+      // Case 1: Devis transitioning TO "processing" - decrement stock
+      if (
+        paymentMethod === "devis" &&
+        newStatus === "processing" &&
+        oldStatus !== "processing"
+      ) {
+        await this.decrementStock(tx, orderId);
+      }
+
+      // Case 2: Devis in "processing" transitioning to "cancelled" - restore stock
+      if (
+        paymentMethod === "devis" &&
+        oldStatus === "processing" &&
+        newStatus === "cancelled"
+      ) {
+        await this.restoreStock(tx, orderId);
+      }
+
+      // Case 3: Devis reverting FROM "processing" to earlier status - restore stock
+      const earlierStatuses = ["pending", "confirmed"];
+      if (
+        paymentMethod === "devis" &&
+        oldStatus === "processing" &&
+        earlierStatuses.includes(newStatus)
+      ) {
+        await this.restoreStock(tx, orderId);
+      }
+
+      // Case 4: Livraison/Carte cancellation - restore stock
+      if (
+        (paymentMethod === "livraison" || paymentMethod === "carte") &&
+        newStatus === "cancelled" &&
+        oldStatus !== "cancelled"
+      ) {
+        await this.restoreStock(tx, orderId);
+      }
 
       // Update order
       const [updated] = await tx
@@ -393,7 +506,7 @@ export class OrderService {
       .where(eq(orders.id, orderId))
       .returning();
 
-    if (!updated) throw new Error("Order not found");
+    if (!updated) throw new NotFoundError("Order not found");
     return updated;
   }
 
@@ -404,6 +517,6 @@ export class OrderService {
       .where(eq(orders.id, orderId))
       .returning();
 
-    if (!deleted) throw new Error("Order not found");
+    if (!deleted) throw new NotFoundError("Order not found");
   }
 }
