@@ -9,8 +9,10 @@ import {
 } from "../../db/schema/orders";
 import crypto from "crypto";
 import { NotFoundError, BadRequestError } from "../../utils/errors";
+import { MailingService } from "../mailing/mailing.service";
 
 export class OrderService {
+  private mailingService = new MailingService();
   // Helper: Generate unique order number
   private async generateOrderNumber(): Promise<string> {
     const uuid = crypto
@@ -245,7 +247,16 @@ export class OrderService {
         changedBy: "customer",
       });
 
-      return order;
+      // Fetch items for email
+      const items = await tx
+        .select()
+        .from(orderItems)
+        .where(eq(orderItems.orderId, order.id));
+
+      return {
+        ...order,
+        items,
+      };
     });
   }
 
@@ -488,6 +499,20 @@ export class OrderService {
         oldStatus,
         newStatus: newStatus as any,
         changedBy,
+      });
+
+      // Send status update email (non-blocking, fire-and-forget)
+      this.mailingService.sendOrderStatusUpdate({
+        orderNumber: currentOrder.orderNumber,
+        customerName: currentOrder.customerName,
+        customerEmail: currentOrder.customerEmail,
+        oldStatus,
+        newStatus,
+        statusMessage: this.mailingService.getStatusMessage(newStatus),
+        orderTrackingUrl: `${process.env.FRONTEND_URL}/track-order/${currentOrder.orderNumber}`,
+        updatedAt: new Date().toISOString(),
+      }).catch(err => {
+        console.error('Unexpected error in status update email:', err);
       });
 
       return updated;
