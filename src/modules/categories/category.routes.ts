@@ -6,10 +6,11 @@ import { verifyJWT } from "../../middlewares/auth";
 const router = Router();
 const controller = new CategoryController();
 
+router.get("/all",asyncHandler(controller.getAllCategoriesWithSubcategories.bind(controller)));
 router.get("/", asyncHandler(controller.getAll.bind(controller)));
 router.get("/:id", asyncHandler(controller.getById.bind(controller)));
 router.post("/", verifyJWT, asyncHandler(controller.create.bind(controller)));
 router.put("/:id", verifyJWT, asyncHandler(controller.update.bind(controller)));
-router.delete("/:id", verifyJWT, asyncHandler(controller.delete.bind(controller)));
+router.delete("/:id",verifyJWT,asyncHandler(controller.delete.bind(controller)));
 
 export default router;

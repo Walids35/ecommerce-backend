@@ -43,7 +43,12 @@ export class SubCategoryService {
   async findAll() {
     return await db.select().from(subCategories);
   }
-
+  async findByCategoryId(categoryId: number) {
+    return await db
+      .select()
+      .from(subCategories)
+      .where(eq(subCategories.categoryId, categoryId));
+  }
   async findById(id: number) {
     const result = await db
       .select()

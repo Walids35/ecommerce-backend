@@ -2,6 +2,7 @@ import { eq, sql } from "drizzle-orm";
 import { db } from "../../db/data-source";
 import { categories } from "../../db/schema/categories";
 import { subCategories } from "../../db/schema/subcategories";
+import { subSubCategories } from "../../db/schema/subsubcategories";
 import { NotFoundError, ConflictError, BadRequestError } from "../../utils/errors";
 
 export class CategoryService {
@@ -10,6 +11,36 @@ export class CategoryService {
       .select()
       .from(categories)
       .orderBy(categories.displayOrder, categories.name);
+  }
+async getAllCategoriesWithSubcategories() {
+    const allCategories = await db
+      .select()
+      .from(categories)
+      .orderBy(categories.displayOrder, categories.name);
+
+    const allSubCategories = await db
+      .select()
+      .from(subCategories)
+      .orderBy(subCategories.displayOrder, subCategories.name);
+
+    const allSubSubCategories = await db
+      .select()
+      .from(subSubCategories)
+      .orderBy(subSubCategories.displayOrder, subSubCategories.name);
+
+    const result = allCategories.map(category => {
+      const subcategories = allSubCategories
+        .filter(sub => sub.categoryId === category.id)
+        .map(sub => {
+          const subsubcategories = allSubSubCategories.filter(
+            subsub => subsub.subCategoryId === sub.id
+          );
+          return { ...sub, subsubcategories };
+        });
+      return { ...category, subcategories };
+    });
+
+    return result;
   }
 
   async getById(id: number) {

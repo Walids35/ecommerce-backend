@@ -16,7 +16,11 @@ export class SubCategoryController {
     const items = await service.findAll();
     sendSuccess(res, items, "Subcategories retrieved successfully");
   }
-
+  async findByCategoryId(req: Request, res: Response) {
+    const categoryId = Number(req.params.categoryId);
+    const items = await service.findByCategoryId(categoryId);
+    sendSuccess(res, items, "Subcategories retrieved successfully");
+  }
   async findOne(req: Request, res: Response) {
     const id = Number(req.params.id);
     const item = await service.findById(id);
