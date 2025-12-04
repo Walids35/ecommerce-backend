@@ -37,13 +37,13 @@ app.use(cookieParser());
 
 // Routes
 app.use('/api/auth', authRoutes);
-app.use('/api/checkout', checkoutRoutes); // Public
-app.use('/api/orders', verifyJWT, orderRoutes); // Admin only
-app.use("/api/categories", verifyJWT, categoryRoutes)
-app.use("/api/subcategories", verifyJWT, subCategoryRoutes);
-app.use("/api/subsubcategories", verifyJWT, subSubCategoryRoutes);
-app.use('/api/attributes', verifyJWT, attributeRoutes);
-app.use("/api/products", verifyJWT, productRoutes);
+app.use('/api/checkout', checkoutRoutes);
+app.use('/api/orders', verifyJWT, orderRoutes);
+app.use("/api/categories", categoryRoutes)
+app.use("/api/subcategories", subCategoryRoutes);
+app.use("/api/subsubcategories", subSubCategoryRoutes);
+app.use('/api/attributes', attributeRoutes);
+app.use("/api/products", productRoutes);
 app.use('/api/file-upload', verifyJWT, fileUploadRoutes);
 app.use('/api/analytics', verifyJWT, analyticsRoutes);
 
