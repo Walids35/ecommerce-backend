@@ -34,6 +34,7 @@ export class SubCategoryService {
         isActive: data.isActive ?? true,
         displayOrder: data.displayOrder ?? 0,
         categoryId: data.categoryId,
+        image: data.image
       })
       .returning();
 

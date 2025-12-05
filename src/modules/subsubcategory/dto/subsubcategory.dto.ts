@@ -4,6 +4,7 @@ export const CreateSubSubCategoryDto = z.object({
   name: z.string().min(1, "Name is required"),
   description: z.string().optional(),
   slug: z.string().min(1).regex(/^[a-z0-9-]+$/, "Slug must be lowercase alphanumeric with hyphens"),
+  image: z.string().optional(),
   isActive: z.boolean().default(true),
   displayOrder: z.number().int().default(0),
   subCategoryId: z.number().int().min(1, "Subcategory ID is required"),

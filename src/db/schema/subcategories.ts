@@ -12,6 +12,7 @@ export const subCategories = pgTable("sub_categories", {
   name: varchar("name", { length: 150 }).notNull(),
   description: text("description"),
   slug: varchar("slug", { length: 200 }).notNull().unique(),
+  image: text("image"),
   isActive: boolean("is_active").default(true).notNull(),
   displayOrder: integer("display_order").default(0).notNull(),
   categoryId: bigint("category_id", { mode: "number" })
