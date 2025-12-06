@@ -9,6 +9,7 @@ import { subCategories, attributes, attributeValues } from "./schema/subcategori
 import { subSubCategories } from "./schema/subsubcategories";
 import { productAttributeValues, products } from "./schema/product";
 import { orders, orderItems, orderStatusHistory } from "./schema/orders";
+import { collections, productCollections } from "./schema/collections";
 
 async function seedDatabase() {
   try {
@@ -972,6 +973,146 @@ async function seedDatabase() {
     await seedStatusHistory(order14.id, null, "pending", "System");
 
     console.log("✔ Order status history seeded");
+
+    // -------------------------------
+    // COLLECTIONS
+    // -------------------------------
+    async function seedCollection(
+      name: string,
+      description: string,
+      slug: string,
+      image: string | null = null,
+      displayOrder: number = 0
+    ) {
+      const exists = await db
+        .select()
+        .from(collections)
+        .where(eq(collections.slug, slug))
+        .limit(1);
+
+      if (exists.length > 0) return exists[0];
+
+      return (
+        await db
+          .insert(collections)
+          .values({ name, description, slug, image, isActive: true, displayOrder })
+          .returning()
+      )[0];
+    }
+
+    const promotionsCollection = await seedCollection(
+      "Promotions",
+      "Special offers and discounted products",
+      "promotions",
+      null,
+      0
+    );
+
+    const newArrivalsCollection = await seedCollection(
+      "New Arrivals",
+      "Recently added products to our store",
+      "new-arrivals",
+      null,
+      1
+    );
+
+    const premiumCollection = await seedCollection(
+      "Premium Products",
+      "High-end and luxury items",
+      "premium-products",
+      null,
+      2
+    );
+
+    const gamingCollection = await seedCollection(
+      "Gaming Zone",
+      "Everything for gamers",
+      "gaming-zone",
+      null,
+      3
+    );
+
+    const workFromHomeCollection = await seedCollection(
+      "Work From Home Essentials",
+      "Perfect setup for remote work",
+      "work-from-home",
+      null,
+      4
+    );
+
+    const mobilityCollection = await seedCollection(
+      "Mobile Productivity",
+      "Portable devices for on-the-go professionals",
+      "mobile-productivity",
+      null,
+      5
+    );
+
+    console.log("✔ Collections seeded");
+
+    // -------------------------------
+    // PRODUCT-COLLECTION LINKS
+    // -------------------------------
+    async function linkProductToCollection(
+      productId: string,
+      collectionId: number,
+      displayOrder: number = 0
+    ) {
+      const exists = await db
+        .select()
+        .from(productCollections)
+        .where(
+          and(
+            eq(productCollections.productId, productId),
+            eq(productCollections.collectionId, collectionId)
+          )
+        )
+        .limit(1);
+
+      if (exists.length > 0) return;
+
+      await db.insert(productCollections).values({
+        productId,
+        collectionId,
+        displayOrder,
+      });
+    }
+
+    // Promotions Collection (products with discounts)
+    await linkProductToCollection(rog.id, promotionsCollection.id, 1); // 5% discount
+    await linkProductToCollection(thinkpad.id, promotionsCollection.id, 2); // 10% discount
+    await linkProductToCollection(galaxy.id, promotionsCollection.id, 3); // 15% discount
+
+    // New Arrivals Collection (latest products)
+    await linkProductToCollection(msi.id, newArrivalsCollection.id, 1);
+    await linkProductToCollection(latitude.id, newArrivalsCollection.id, 2);
+    await linkProductToCollection(galaxy.id, newArrivalsCollection.id, 3);
+    await linkProductToCollection(herman.id, newArrivalsCollection.id, 4);
+
+    // Premium Products Collection (high-end items)
+    await linkProductToCollection(herman.id, premiumCollection.id, 1); // $1299
+    await linkProductToCollection(msi.id, premiumCollection.id, 2); // $2599
+    await linkProductToCollection(rog.id, premiumCollection.id, 3); // $2299
+    await linkProductToCollection(latitude.id, premiumCollection.id, 4); // $2099
+    await linkProductToCollection(thinkpad.id, premiumCollection.id, 5); // $1899
+
+    // Gaming Zone Collection (gaming-related products)
+    await linkProductToCollection(rog.id, gamingCollection.id, 1);
+    await linkProductToCollection(msi.id, gamingCollection.id, 2);
+
+    // Work From Home Collection (office furniture + laptops)
+    await linkProductToCollection(thinkpad.id, workFromHomeCollection.id, 1);
+    await linkProductToCollection(latitude.id, workFromHomeCollection.id, 2);
+    await linkProductToCollection(ergomax.id, workFromHomeCollection.id, 3);
+    await linkProductToCollection(herman.id, workFromHomeCollection.id, 4);
+
+    // Mobile Productivity Collection (tablets + business laptops)
+    await linkProductToCollection(ipad.id, mobilityCollection.id, 1);
+    await linkProductToCollection(galaxy.id, mobilityCollection.id, 2);
+    await linkProductToCollection(thinkpad.id, mobilityCollection.id, 3);
+    await linkProductToCollection(latitude.id, mobilityCollection.id, 4);
+
+    console.log("✔ Product-collection links created");
 
     console.log("🌱 Database seeding completed successfully!");
   } catch (error) {
