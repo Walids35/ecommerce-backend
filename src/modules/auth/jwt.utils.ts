@@ -6,12 +6,10 @@ dotenv.config();
 
 export function signToken(payload: any) {
   const secret = process.env.JWT_SECRET;
-  const expiresIn = process.env.JWT_EXPIRES_IN;
-  if (!secret || !expiresIn) {
-    throw new Error("JWT_SECRET and JWT_EXPIRES_IN must be provided");
+  if (!secret) {
+    throw new Error("JWT_SECRET must be provided");
   }
-  const options: jwt.SignOptions = { expiresIn: expiresIn as jwt.SignOptions['expiresIn'] };
-  return jwt.sign(payload, secret as jwt.Secret, { expiresIn: Date.now() + 15 * 60 * 1000 });
+  return jwt.sign(payload, secret as jwt.Secret, { expiresIn: '30d' });
 }
 
 export function signPermenantToken(payload: any) {
@@ -35,7 +33,7 @@ export const cookies = {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'strict',
-    maxAge: 15 * 60 * 1000,
+    maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days in milliseconds
   }),
 
   set: (res: Response, name: string, value: string, options: CookieOptions = {}): void => {
