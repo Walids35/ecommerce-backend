@@ -2,6 +2,7 @@ import { relations, sql } from "drizzle-orm";
 import { bigint, bigserial, boolean, integer, numeric, pgTable, text, timestamp, uuid, varchar, check } from "drizzle-orm/pg-core";
 import { subCategories, attributes, attributeValues } from "./subcategories";
 import { subSubCategories } from "./subsubcategories";
+import { productCollections } from "./collections";
 
 export const products = pgTable(
   "products",
@@ -48,6 +49,7 @@ export const productsRelations = relations(products, ({ one, many }) => ({
     references: [subSubCategories.id],
   }),
   attributeValues: many(productAttributeValues),
+  collections: many(productCollections),
 }));
 
 export const productAttributeValues = pgTable("product_attribute_values", {
