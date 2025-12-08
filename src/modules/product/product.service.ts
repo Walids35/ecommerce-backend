@@ -3,8 +3,13 @@ import {
   CreateProductInputType,
   UpdateProductInputType,
 } from "./dto/product.dto";
+import { FilterProductsInputType } from "./dto/filter.dto";
 import { db } from "../../db/data-source";
-import { subCategories, attributes, attributeValues } from "../../db/schema/subcategories";
+import {
+  subCategories,
+  attributes,
+  attributeValues,
+} from "../../db/schema/subcategories";
 import { subSubCategories } from "../../db/schema/subsubcategories";
 import { productAttributeValues, products } from "../../db/schema/product";
 import { NotFoundError, BadRequestError } from "../../utils/errors";
@@ -418,5 +423,125 @@ export class ProductService {
       .returning();
 
     return deleted;
+  }
+
+  // ---------------------------
+  // FILTER PRODUCTS
+  // ---------------------------
+  async filterProducts(input: FilterProductsInputType) {
+    const {
+      categoryId,
+      categoryType,
+      filters = [],
+      page = 1,
+      limit = 10,
+    } = input;
+    const offset = (page - 1) * limit;
+
+    const baseWhereClauses = [];
+
+    // Base category filter
+    if (categoryType === "subcategory") {
+      baseWhereClauses.push(eq(products.subCategoryId, categoryId));
+    } else if (categoryType === "subsubcategory") {
+      baseWhereClauses.push(eq(products.subSubCategoryId, categoryId));
+    } else {
+      throw new BadRequestError("Invalid category type");
+    }
+
+    baseWhereClauses.push(eq(products.isActive, true));
+
+    let matchingProductIds: string[] = [];
+
+    if (filters.length > 0) {
+      const filterConditions = filters.map(filter =>
+        and(
+          eq(productAttributeValues.attributeId, filter.attributeId),
+          inArray(productAttributeValues.attributeValueId, filter.valueIds)
+        )
+      );
+
+      const subquery = db
+        .select({
+          productId: productAttributeValues.productId,
+        })
+        .from(productAttributeValues)
+        .where(or(...filterConditions))
+        .groupBy(productAttributeValues.productId)
+        .having(sql`COUNT(DISTINCT ${productAttributeValues.attributeId}) = ${filters.length}`);
+
+      const result = await subquery;
+      matchingProductIds = result.map((r) => r.productId);
+
+      if (matchingProductIds.length === 0) {
+        return { page, limit, total: 0, data: [] };
+      }
+    }
+
+    const finalWhereClauses = [...baseWhereClauses];
+    if (matchingProductIds.length > 0) {
+      finalWhereClauses.push(inArray(products.id, matchingProductIds));
+    }
+
+    const finalWhere = and(...finalWhereClauses);
+
+    const rows = await db
+      .select()
+      .from(products)
+      .where(finalWhere)
+      .orderBy(asc(products.displayOrder), desc(products.createdAt))
+      .limit(limit)
+      .offset(offset);
+
+    const ids = rows.map((p) => p.id);
+    let attributeRows: any[] = [];
+    if (ids.length > 0) {
+      attributeRows = await db
+        .select({
+          productId: productAttributeValues.productId,
+          attributeId: attributes.id,
+          attributeName: attributes.name,
+          valueId: attributeValues.id,
+          value: attributeValues.value,
+        })
+        .from(productAttributeValues)
+        .innerJoin(
+          attributes,
+          eq(productAttributeValues.attributeId, attributes.id)
+        )
+        .innerJoin(
+          attributeValues,
+          eq(productAttributeValues.attributeValueId, attributeValues.id)
+        )
+        .where(inArray(productAttributeValues.productId, ids));
+    }
+
+    const groupedAttributes = attributeRows.reduce((acc, row) => {
+      if (!acc[row.productId]) acc[row.productId] = [];
+      acc[row.productId].push({
+        attributeId: row.attributeId,
+        attributeName: row.attributeName,
+        valueId: row.valueId,
+        value: row.value,
+      });
+      return acc;
+    }, {} as Record<string, any[]>);
+
+    const final = rows.map((p) => ({
+      ...p,
+      attributes: groupedAttributes[p.id] ?? [],
+    }));
+
+    const [{ count }] = await db
+      .select({ count: sql<number>`COUNT(*)` })
+      .from(products)
+      .where(finalWhere);
+
+    return {
+      page,
+      limit,
+      total: Number(count),
+      data: final,
+    };
   }
 }

@@ -3,6 +3,7 @@ import { Request, Response } from "express";
 import { ProductService } from "./product.service";
 import { CreateProductInput, updateProductDisplayOrderInput, UpdateProductInput } from "./dto/product.dto";
 import { sendSuccess, sendCreated, sendPaginated } from "../../utils/response";
+import { FilterProductsInput } from "./dto/filter.dto";
 
 const service = new ProductService();
 
@@ -68,5 +69,20 @@ export class ProductController {
     const { displayOrder } = parsed;
     const updatedProduct = await service.updateProductDisplayOrder(req.params.id, displayOrder);
     sendSuccess(res, updatedProduct, "Product display order updated successfully");
+  }
+
+  async filterProducts(req: Request, res: Response) {
+    const parsed = FilterProductsInput.parse(req.body);
+    const result = await service.filterProducts(parsed);
+    sendPaginated(
+      res,
+      result.data,
+      {
+        page: result.page,
+        limit: result.limit,
+        total: result.total,
+      },
+      "Products retrieved successfully"
+    );
   }
 }

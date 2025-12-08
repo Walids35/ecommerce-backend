@@ -14,4 +14,6 @@ router.patch("/:id/toggle-active", verifyJWT, asyncHandler(controller.toggleActi
 router.patch("/:id/display-order", verifyJWT, asyncHandler(controller.updateDisplayOrder.bind(controller)));
 router.delete("/:id", verifyJWT, asyncHandler(controller.delete.bind(controller)));
 
+router.post("/filter", asyncHandler(controller.filterProducts.bind(controller)));
+
 export default router;
