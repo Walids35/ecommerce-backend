@@ -19,7 +19,12 @@ export class ProductService {
   // CREATE PRODUCT
   // ---------------------------
   async create(data: CreateProductInputType) {
-    // Validate category exists
+    // Validate at least one category is provided
+    if (!data.subCategoryId && !data.subSubCategoryId) {
+      throw new BadRequestError("At least one of subCategoryId or subSubCategoryId must be provided");
+    }
+
+    // Validate subcategory if provided
     if (data.subCategoryId) {
       const subcategory = await db
         .select()
@@ -27,17 +32,29 @@ export class ProductService {
         .where(eq(subCategories.id, data.subCategoryId))
         .limit(1);
 
-      if (!subcategory.length) throw new NotFoundError("Subcategory not found");
-    } else if (data.subSubCategoryId) {
+      if (!subcategory.length) {
+        throw new NotFoundError("Subcategory not found");
+      }
+    }
+
+    // Validate subsubcategory if provided
+    if (data.subSubCategoryId) {
       const subsubcategory = await db
         .select()
         .from(subSubCategories)
         .where(eq(subSubCategories.id, data.subSubCategoryId))
         .limit(1);
 
-      if (!subsubcategory.length) throw new NotFoundError("Subsubcategory not found");
-    } else {
-      throw new BadRequestError("Either subCategoryId or subSubCategoryId must be provided");
+      if (!subsubcategory.length) {
+        throw new NotFoundError("Subsubcategory not found");
+      }
+
+      // If both categories provided, validate relationship
+      if (data.subCategoryId && subsubcategory[0].subCategoryId !== data.subCategoryId) {
+        throw new BadRequestError(
+          `Subsubcategory ${data.subSubCategoryId} does not belong to subcategory ${data.subCategoryId}`
+        );
+      }
     }
 
     // Insert base product
@@ -72,6 +89,10 @@ export class ProductService {
   }
 
   // Helper: Validate attributes belong to correct parent
+  // Business Rule:
+  // - If product has ONLY subcategory → attributes must come from subcategory
+  // - If product has subsubcategory (with or without subcategory) → attributes MUST come from subsubcategory
+  //   (because subcategories with subsubcategories cannot have attributes)
   private async validateAndInsertAttributes(
     productId: string,
     attrs: Array<{ attributeId: number; attributeValueId: number }>,
@@ -92,17 +113,22 @@ export class ProductService {
 
       const attribute = attributeCheck[0];
 
-      // Validate attribute belongs to correct parent
-      if (subCategoryId && attribute.subCategoryId !== subCategoryId) {
-        throw new BadRequestError(
-          `Attribute ${attr.attributeId} does not belong to subcategory ${subCategoryId}`
-        );
-      }
-
-      if (subSubCategoryId && attribute.subSubCategoryId !== subSubCategoryId) {
-        throw new BadRequestError(
-          `Attribute ${attr.attributeId} does not belong to subsubcategory ${subSubCategoryId}`
-        );
+      // Determine which parent should have the attributes based on business rule
+      if (subSubCategoryId) {
+        // Product has subsubcategory → attributes MUST come from subsubcategory
+        if (attribute.subSubCategoryId !== subSubCategoryId) {
+          throw new BadRequestError(
+            `Attribute ${attr.attributeId} does not belong to subsubcategory ${subSubCategoryId}. ` +
+            `When a product has a subsubcategory, it must use attributes from that subsubcategory only.`
+          );
+        }
+      } else if (subCategoryId) {
+        // Product has only subcategory → attributes must come from subcategory
+        if (attribute.subCategoryId !== subCategoryId) {
+          throw new BadRequestError(
+            `Attribute ${attr.attributeId} does not belong to subcategory ${subCategoryId}`
+          );
+        }
       }
 
       // Validate the provided value
@@ -441,6 +467,9 @@ export class ProductService {
     const baseWhereClauses = [];
 
     // Base category filter
+    // Note: Products can now have BOTH subcategory and subsubcategory
+    // - Filtering by subcategory returns products with that subcategory (regardless of subsubcategory)
+    // - Filtering by subsubcategory returns products with that specific subsubcategory
     if (categoryType === "subcategory") {
       baseWhereClauses.push(eq(products.subCategoryId, categoryId));
     } else if (categoryType === "subsubcategory") {

@@ -7,7 +7,8 @@ export const CreateProductInput = z.object({
   stock: z.number().int().nonnegative(),
   discountPercentage: z.string().optional(),
 
-  // Flexible category linking: exactly one required
+  // Flexible category linking: at least one required
+  // Can specify BOTH subcategory and subsubcategory
   subCategoryId: z.number().int().optional(),
   subSubCategoryId: z.number().int().optional(),
 
@@ -26,11 +27,10 @@ export const CreateProductInput = z.object({
     .optional(),
 }).refine(
   (data) => {
-    const hasSubCat = data.subCategoryId !== undefined;
-    const hasSubSubCat = data.subSubCategoryId !== undefined;
-    return (hasSubCat && !hasSubSubCat) || (!hasSubCat && hasSubSubCat);
+    // At least one category must be provided
+    return data.subCategoryId !== undefined || data.subSubCategoryId !== undefined;
   },
-  { message: "Exactly one of subCategoryId or subSubCategoryId must be provided" }
+  { message: "At least one of subCategoryId or subSubCategoryId must be provided" }
 );
 
 export const UpdateProductInput = z.object({
@@ -60,30 +60,3 @@ export const updateProductDisplayOrderInput = z.object({
 
 export type CreateProductInputType = z.infer<typeof CreateProductInput>;
 export type UpdateProductInputType = z.infer<typeof UpdateProductInput>;
-
-export const FilterProductsInput = z.object({
-  // At least one of these is required to scope the search
-  subCategoryId: z.number().int().optional(),
-  subSubCategoryId: z.number().int().optional(),
-
-  // Array of selected attribute value IDs for filtering
-  // e.g. [12, 25] means filter by products having (value 12) AND (value 25)
-  attributeValueIds: z.array(z.number().int()).optional(),
-
-  // Search, Pagination, and Sorting
-  search: z.string().optional(),
-  page: z.number().int().min(1).optional().default(1),
-  limit: z.number().int().min(1).optional().default(10),
-  sort: z.enum(["asc", "desc"]).optional().default("desc"),
-  sortBy: z
-    .enum(["name", "price", "createdAt", "displayOrder"])
-    .optional()
-    .default("displayOrder"),
-}).refine(
-  (data) => data.subCategoryId !== undefined || data.subSubCategoryId !== undefined,
-  {
-    message: "Either subCategoryId or subSubCategoryId must be provided.",
-  }
-);
-
-export type FilterProductsInputType = z.infer<typeof FilterProductsInput>;

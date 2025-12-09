@@ -296,35 +296,42 @@ export class AnalyticsService {
   }
 
   // Revenue by category join
+  // Handle products with both subcategory AND subsubcategory
+  // Products should be counted once per top-level category
   private async getRevenueByCategoryJoin(whereClause: any[]) {
-    // Using subquery approach with Drizzle query builder
-    const results = await db
-      .select({
-        categoryId: categories.id,
-        categoryName: categories.name,
-        revenue: sql<string>`COALESCE(SUM(${orderItems.subtotal}::numeric), 0)`,
-        orderCount: sql<number>`COUNT(DISTINCT ${orders.id})`,
-      })
-      .from(orders)
-      .innerJoin(orderItems, eq(orders.id, orderItems.orderId))
-      .innerJoin(products, eq(orderItems.productId, products.id))
-      .leftJoin(subCategories, eq(products.subCategoryId, subCategories.id))
-      .leftJoin(
-        subSubCategories,
-        eq(products.subSubCategoryId, subSubCategories.id)
+    // Use Drizzle query builder without aliases to match the whereClause references
+    const results = await db.execute<{
+      categoryId: number;
+      categoryName: string;
+      revenue: string;
+      orderCount: number;
+    }>(sql`
+      WITH product_categories AS (
+        SELECT
+          p.id as product_id,
+          COALESCE(
+            sc.category_id,
+            (SELECT parent_sc.category_id FROM ${subCategories} parent_sc WHERE parent_sc.id = ssc.sub_category_id)
+          ) as category_id
+        FROM ${products} p
+        LEFT JOIN ${subCategories} sc ON p.sub_category_id = sc.id
+        LEFT JOIN ${subSubCategories} ssc ON p.subsubcategory_id = ssc.id
       )
-      .leftJoin(
-        categories,
-        or(
-          eq(categories.id, subCategories.categoryId),
-          eq(categories.id, subSubCategories.subCategoryId)
-        )
-      )
-      .where(and(...whereClause))
-      .groupBy(categories.id, categories.name)
-      .orderBy(desc(sql`SUM(${orderItems.subtotal}::numeric)`));
+      SELECT
+        pc.category_id as "categoryId",
+        COALESCE(c.name, 'Uncategorized') as "categoryName",
+        COALESCE(SUM(${orderItems.subtotal}::numeric), 0)::text as "revenue",
+        COUNT(DISTINCT ${orders.id}) as "orderCount"
+      FROM ${orders}
+      INNER JOIN ${orderItems} ON ${orders.id} = ${orderItems.orderId}
+      INNER JOIN product_categories pc ON ${orderItems.productId} = pc.product_id
+      LEFT JOIN ${categories} c ON pc.category_id = c.id
+      WHERE ${and(...whereClause)}
+      GROUP BY pc.category_id, c.name
+      ORDER BY SUM(${orderItems.subtotal}::numeric) DESC
+    `);
 
-    return results.map((item) => ({
+    return results.rows.map((item) => ({
       categoryId: item.categoryId,
       categoryName: item.categoryName,
       revenue: item.revenue,
@@ -556,8 +563,22 @@ export class AnalyticsService {
         productName: products.name,
         stock: products.stock,
         price: products.price,
-        categoryName: sql<string>`COALESCE(${categories.name}, 'Uncategorized')`,
-        subCategoryName: sql<string>`COALESCE(${subCategories.name}, ${subSubCategories.name}, 'Uncategorized')`,
+        categoryName: sql<string>`COALESCE(
+          ${categories.name},
+          (SELECT c.name FROM ${categories} c
+           INNER JOIN ${subCategories} sc ON c.id = sc.category_id
+           WHERE sc.id = ${subSubCategories.subCategoryId}),
+          'Uncategorized'
+        )`,
+        subCategoryName: sql<string>`CASE
+          WHEN ${products.subSubCategoryId} IS NOT NULL AND ${products.subCategoryId} IS NOT NULL
+            THEN ${subCategories.name} || ' > ' || ${subSubCategories.name}
+          WHEN ${subSubCategories.name} IS NOT NULL
+            THEN ${subSubCategories.name}
+          WHEN ${subCategories.name} IS NOT NULL
+            THEN ${subCategories.name}
+          ELSE 'Uncategorized'
+        END`,
       })
       .from(products)
       .leftJoin(subCategories, eq(products.subCategoryId, subCategories.id))
@@ -567,10 +588,7 @@ export class AnalyticsService {
       )
       .leftJoin(
         categories,
-        or(
-          eq(categories.id, subCategories.categoryId),
-          eq(categories.id, subSubCategories.subCategoryId)
-        )
+        eq(categories.id, subCategories.categoryId)
       )
       .where(and(...lowStockWhere))
       .orderBy(asc(products.stock))
@@ -588,8 +606,22 @@ export class AnalyticsService {
       .select({
         productId: products.id,
         productName: products.name,
-        categoryName: sql<string>`COALESCE(${categories.name}, 'Uncategorized')`,
-        subCategoryName: sql<string>`COALESCE(${subCategories.name}, ${subSubCategories.name}, 'Uncategorized')`,
+        categoryName: sql<string>`COALESCE(
+          ${categories.name},
+          (SELECT c.name FROM ${categories} c
+           INNER JOIN ${subCategories} sc ON c.id = sc.category_id
+           WHERE sc.id = ${subSubCategories.subCategoryId}),
+          'Uncategorized'
+        )`,
+        subCategoryName: sql<string>`CASE
+          WHEN ${products.subSubCategoryId} IS NOT NULL AND ${products.subCategoryId} IS NOT NULL
+            THEN ${subCategories.name} || ' > ' || ${subSubCategories.name}
+          WHEN ${subSubCategories.name} IS NOT NULL
+            THEN ${subSubCategories.name}
+          WHEN ${subCategories.name} IS NOT NULL
+            THEN ${subCategories.name}
+          ELSE 'Uncategorized'
+        END`,
       })
       .from(products)
       .leftJoin(subCategories, eq(products.subCategoryId, subCategories.id))
@@ -599,10 +631,7 @@ export class AnalyticsService {
       )
       .leftJoin(
         categories,
-        or(
-          eq(categories.id, subCategories.categoryId),
-          eq(categories.id, subSubCategories.subCategoryId)
-        )
+        eq(categories.id, subCategories.categoryId)
       )
       .where(and(...outOfStockWhere))
       .orderBy(asc(products.name));
@@ -649,35 +678,40 @@ export class AnalyticsService {
   }
 
   // Stock by category join
+  // Prevent duplicate counting for products with both subcategory and subsubcategory
+  // Products are counted once per top-level category they belong to
   private async getStockByCategoryJoin() {
-    const results = await db
-      .select({
-        categoryId: categories.id,
-        categoryName: categories.name,
-        productCount: sql<number>`COUNT(${products.id})`,
-        totalStock: sql<number>`COALESCE(SUM(${products.stock}), 0)`,
-        stockValue: sql<string>`COALESCE(SUM(${products.price}::numeric * ${products.stock}), 0)`,
-      })
-      .from(categories)
-      .leftJoin(subCategories, eq(categories.id, subCategories.categoryId))
-      .leftJoin(
-        subSubCategories,
-        eq(subCategories.id, subSubCategories.subCategoryId)
+    // Use a CTE/subquery approach to ensure products are counted once
+    const results = await db.execute<{
+      categoryId: number;
+      categoryName: string;
+      productCount: number;
+      totalStock: number;
+      stockValue: string;
+    }>(sql`
+      SELECT
+        c.id as "categoryId",
+        c.name as "categoryName",
+        COUNT(DISTINCT p.id) as "productCount",
+        COALESCE(SUM(p.stock), 0)::integer as "totalStock",
+        COALESCE(SUM(p.price::numeric * p.stock), 0)::text as "stockValue"
+      FROM ${categories} c
+      LEFT JOIN ${subCategories} sc ON c.id = sc.category_id
+      LEFT JOIN ${subSubCategories} ssc ON sc.id = ssc.sub_category_id
+      LEFT JOIN ${products} p ON (
+        (p.sub_category_id = sc.id OR p.subsubcategory_id = ssc.id)
+        AND p.is_active = true
       )
-      .leftJoin(
-        products,
-        or(
-          eq(products.subCategoryId, subCategories.id),
-          eq(products.subSubCategoryId, subSubCategories.id)
-        )
-      )
-      .where(eq(products.isActive, true))
-      .groupBy(categories.id, categories.name)
-      .orderBy(desc(sql`SUM(${products.price}::numeric * ${products.stock})`));
+      GROUP BY c.id, c.name
+      ORDER BY SUM(p.price::numeric * p.stock) DESC NULLS LAST
+    `);
 
-    return results.map((item) => ({
-      ...item,
-      stockValue: parseFloat(item.stockValue).toFixed(2),
+    return results.rows.map((item) => ({
+      categoryId: item.categoryId,
+      categoryName: item.categoryName,
+      productCount: item.productCount,
+      totalStock: item.totalStock,
+      stockValue: parseFloat(item.stockValue || '0').toFixed(2),
     }));
   }
 }

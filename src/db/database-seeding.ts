@@ -425,14 +425,14 @@ async function seedDatabase() {
       )[0];
     }
 
-    // Gaming Laptops (at subsubcategory level)
+    // Gaming Laptops (at subsubcategory level - need BOTH parent subcategory AND subsubcategory)
     const rog = await seedProduct(
       "ASUS ROG Strix",
       "High-end gaming laptop with RGB",
       "2299.99",
       25,
-      undefined,
-      gamingLaptopSub.id,
+      laptopSub.id, // Parent subcategory (Laptops)
+      gamingLaptopSub.id, // Subsubcategory (Gaming Laptops)
       ["rog.jpg"],
       null,
       "5",
@@ -445,8 +445,8 @@ async function seedDatabase() {
       "Powerful gaming laptop",
       "2599.99",
       15,
-      undefined,
-      gamingLaptopSub.id,
+      laptopSub.id, // Parent subcategory (Laptops)
+      gamingLaptopSub.id, // Subsubcategory (Gaming Laptops)
       ["msi.jpg"],
       null,
       "0",
@@ -454,14 +454,14 @@ async function seedDatabase() {
       2
     );
 
-    // Business Laptops (at subsubcategory level)
+    // Business Laptops (at subsubcategory level - need BOTH parent subcategory AND subsubcategory)
     const thinkpad = await seedProduct(
       "ThinkPad X1 Carbon",
       "Ultra-portable business laptop",
       "1899.99",
       40,
-      undefined,
-      businessLaptopSub.id,
+      laptopSub.id, // Parent subcategory (Laptops)
+      businessLaptopSub.id, // Subsubcategory (Business Laptops)
       ["thinkpad.jpg"],
       null,
       "10",
@@ -474,8 +474,8 @@ async function seedDatabase() {
       "Enterprise-grade laptop",
       "2099.99",
       30,
-      undefined,
-      businessLaptopSub.id,
+      laptopSub.id, // Parent subcategory (Laptops)
+      businessLaptopSub.id, // Subsubcategory (Business Laptops)
       ["latitude.jpg"],
       null,
       "0",

@@ -14,7 +14,10 @@ export const products = pgTable(
     stock: integer("stock").default(0).notNull(),
     discountPercentage: numeric("discount_percentage", { precision: 5, scale: 2 }).default("0"),
 
-    // Flexible category linking: can link to subcategory OR subsubcategory
+    // Flexible category linking: can link to subcategory AND/OR subsubcategory
+    // - Product with ONLY subCategoryId → inherits attributes from subcategory
+    // - Product with BOTH subCategoryId + subSubCategoryId → inherits attributes from subsubcategory only
+    //   (because subcategory with subsubcategories cannot have attributes)
     subCategoryId: bigint("sub_category_id", { mode: "number" })
       .references(() => subCategories.id, { onDelete: "restrict" }),
     subSubCategoryId: bigint("subsubcategory_id", { mode: "number" })
@@ -26,17 +29,7 @@ export const products = pgTable(
     displayOrder: integer("display_order").default(0).notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
-  },
-  (table) => ({
-    // CHECK constraint: exactly one category FK must be non-null
-    checkOneCategory: check(
-      "check_one_category",
-      sql`(
-        (${table.subCategoryId} IS NOT NULL AND ${table.subSubCategoryId} IS NULL) OR
-        (${table.subCategoryId} IS NULL AND ${table.subSubCategoryId} IS NOT NULL)
-      )`
-    ),
-  })
+  }
 );
 
 export const productsRelations = relations(products, ({ one, many }) => ({
