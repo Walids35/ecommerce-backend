@@ -11,6 +11,7 @@ export const CreateProductInput = z.object({
   // Can specify BOTH subcategory and subsubcategory
   subCategoryId: z.number().int().optional(),
   subSubCategoryId: z.number().int().optional(),
+  brandId: z.number().int().positive().optional(),
 
   images: z.array(z.string()).min(1),
   datasheet: z.string().optional(),
@@ -47,6 +48,7 @@ export const UpdateProductInput = z.object({
   displayOrder: z.number().int().optional(),
   subcategoryOrder: z.number().int().nonnegative().optional(),
   subsubcategoryOrder: z.number().int().nonnegative().optional(),
+  brandId: z.number().int().positive().optional(),
 
   attributes: z
     .array(

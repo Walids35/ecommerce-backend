@@ -3,6 +3,7 @@ import { bigint, bigserial, boolean, integer, numeric, pgTable, text, timestamp,
 import { subCategories, attributes, attributeValues } from "./subcategories";
 import { subSubCategories } from "./subsubcategories";
 import { productCollections } from "./collections";
+import { brands } from "./brands";
 
 export const products = pgTable(
   "products",
@@ -22,6 +23,8 @@ export const products = pgTable(
       .references(() => subCategories.id, { onDelete: "restrict" }),
     subSubCategoryId: bigint("subsubcategory_id", { mode: "number" })
       .references(() => subSubCategories.id, { onDelete: "restrict" }),
+    brandId: bigint("brand_id", { mode: "number" })
+      .references(() => brands.id, { onDelete: "set null" }),
 
     images: text("images").array().notNull(),
     datasheet: text("datasheet"),
@@ -42,6 +45,10 @@ export const productsRelations = relations(products, ({ one, many }) => ({
   subSubCategory: one(subSubCategories, {
     fields: [products.subSubCategoryId],
     references: [subSubCategories.id],
+  }),
+  brand: one(brands, {
+    fields: [products.brandId],
+    references: [brands.id],
   }),
   attributeValues: many(productAttributeValues),
   collections: many(productCollections),

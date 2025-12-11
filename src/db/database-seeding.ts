@@ -14,6 +14,7 @@ import { subSubCategories } from "./schema/subsubcategories";
 import { productAttributeValues, products } from "./schema/product";
 import { orders, orderItems, orderStatusHistory } from "./schema/orders";
 import { collections, productCollections } from "./schema/collections";
+import { brands } from "./schema/brands";
 
 async function seedDatabase() {
   try {
@@ -89,6 +90,111 @@ async function seedDatabase() {
     );
 
     console.log("✔ Categories seeded");
+
+    // -------------------------------
+    // BRANDS
+    // -------------------------------
+    async function seedBrand(
+      name: string,
+      slug: string,
+      description: string = "",
+      logo: string = "",
+      displayOrder: number = 0
+    ) {
+      const exists = await db
+        .select()
+        .from(brands)
+        .where(eq(brands.slug, slug))
+        .limit(1);
+
+      if (exists.length > 0) {
+        await db
+          .update(brands)
+          .set({ name, description, logo, displayOrder, updatedAt: new Date() })
+          .where(eq(brands.slug, slug));
+        return exists[0];
+      }
+
+      return (
+        await db
+          .insert(brands)
+          .values({
+            name,
+            description,
+            slug,
+            logo,
+            isActive: true,
+            displayOrder,
+          })
+          .returning()
+      )[0];
+    }
+
+    const asus = await seedBrand(
+      "ASUS",
+      "asus",
+      "ASUSTeK Computer Inc. is a Taiwanese multinational company known for computer hardware and electronics",
+      "https://example.com/brands/asus-logo.png",
+      0
+    );
+
+    const msi = await seedBrand(
+      "MSI",
+      "msi",
+      "Micro-Star International is a Taiwanese multinational company specializing in gaming hardware",
+      "https://example.com/brands/msi-logo.png",
+      1
+    );
+
+    const lenovo = await seedBrand(
+      "Lenovo",
+      "lenovo",
+      "Lenovo Group Limited is a Chinese multinational technology company",
+      "https://example.com/brands/lenovo-logo.png",
+      2
+    );
+
+    const dell = await seedBrand(
+      "Dell",
+      "dell",
+      "Dell Inc. is an American multinational computer technology company",
+      "https://example.com/brands/dell-logo.png",
+      3
+    );
+
+    const apple = await seedBrand(
+      "Apple",
+      "apple",
+      "Apple Inc. is an American multinational technology company",
+      "https://example.com/brands/apple-logo.png",
+      4
+    );
+
+    const samsung = await seedBrand(
+      "Samsung",
+      "samsung",
+      "Samsung Electronics is a South Korean multinational electronics company",
+      "https://example.com/brands/samsung-logo.png",
+      5
+    );
+
+    const steelcase = await seedBrand(
+      "Steelcase",
+      "steelcase",
+      "Steelcase Inc. is an American furniture company known for office furniture and ergonomic seating",
+      "https://example.com/brands/steelcase-logo.png",
+      6
+    );
+
+    const hermanMiller = await seedBrand(
+      "Herman Miller",
+      "herman-miller",
+      "Herman Miller is an American company known for modern furniture design and ergonomic office chairs",
+      "https://example.com/brands/herman-miller-logo.png",
+      7
+    );
+
+    console.log("✔ Brands seeded");
 
     // -------------------------------
     // SUBCATEGORIES
@@ -385,7 +491,9 @@ async function seedDatabase() {
       datasheet: string | null = null,
       discountPercentage: string = "0",
       isActive: boolean = true,
-      displayOrder: number = 0
+      subcategoryOrder: number = 0,
+      subsubcategoryOrder: number = 0,
+      brandId: number | null = null
     ) {
       const exists = await db
         .select()
@@ -419,7 +527,9 @@ async function seedDatabase() {
             datasheet,
             discountPercentage,
             isActive,
-            displayOrder,
+            subcategoryOrder,
+            subsubcategoryOrder,
+            brandId: brandId,
           })
           .returning()
       )[0];
@@ -437,10 +547,12 @@ async function seedDatabase() {
       null,
       "5",
       true,
-      1
+      0, // subcategoryOrder (not used for subsubcategory products)
+      1, // subsubcategoryOrder
+      asus.id
     );
 
-    const msi = await seedProduct(
+    const msiGaming = await seedProduct(
       "MSI GE76 Raider",
       "Powerful gaming laptop",
       "2599.99",
@@ -451,7 +563,9 @@ async function seedDatabase() {
       null,
       "0",
       true,
-      2
+      0, // subcategoryOrder (not used for subsubcategory products)
+      2, // subsubcategoryOrder
+      msi.id
     );
 
     // Business Laptops (at subsubcategory level - need BOTH parent subcategory AND subsubcategory)
@@ -466,7 +580,9 @@ async function seedDatabase() {
       null,
       "10",
       true,
-      3
+      0, // subcategoryOrder (not used for subsubcategory products)
+      1, // subsubcategoryOrder
+      lenovo.id
     );
 
     const latitude = await seedProduct(
@@ -480,7 +596,9 @@ async function seedDatabase() {
       null,
       "0",
       true,
-      4
+      0, // subcategoryOrder (not used for subsubcategory products)
+      2, // subsubcategoryOrder
+      dell.id
     );
 
     // Tablets (at subcategory level - no subsubcategory)
@@ -495,7 +613,9 @@ async function seedDatabase() {
       null,
       "0",
       true,
-      5
+      1, // subcategoryOrder
+      0, // subsubcategoryOrder (not used for subcategory products)
+      apple.id
     );
 
     const galaxy = await seedProduct(
@@ -509,7 +629,9 @@ async function seedDatabase() {
       null,
       "15",
       true,
-      6
+      2, // subcategoryOrder
+      0, // subsubcategoryOrder (not used for subcategory products)
+      samsung.id
     );
 
     // Chairs (at subcategory level)
@@ -524,7 +646,9 @@ async function seedDatabase() {
       null,
       "0",
       true,
-      7
+      1, // subcategoryOrder
+      0, // subsubcategoryOrder (not used for subcategory products)
+      steelcase.id
     );
 
     const herman = await seedProduct(
@@ -538,7 +662,9 @@ async function seedDatabase() {
       null,
       "0",
       true,
-      8
+      2, // subcategoryOrder
+      0, // subsubcategoryOrder (not used for subcategory products)
+      hermanMiller.id
     );
 
     console.log("✔ Products seeded");
@@ -579,11 +705,11 @@ async function seedDatabase() {
     await link(rog.id, refreshRateAttr.id, refresh240.id);
 
     // MSI (gaming laptop)
-    await link(msi.id, gamingRamAttr.id, gamingRam32.id);
-    await link(msi.id, gamingCpuAttr.id, gamingCpuI9.id);
-    await link(msi.id, gamingStorageAttr.id, gamingStorage1tb.id);
-    await link(msi.id, gpuAttr.id, gpuRtx4070.id);
-    await link(msi.id, refreshRateAttr.id, refresh144.id);
+    await link(msiGaming.id, gamingRamAttr.id, gamingRam32.id);
+    await link(msiGaming.id, gamingCpuAttr.id, gamingCpuI9.id);
+    await link(msiGaming.id, gamingStorageAttr.id, gamingStorage1tb.id);
+    await link(msiGaming.id, gpuAttr.id, gpuRtx4070.id);
+    await link(msiGaming.id, refreshRateAttr.id, refresh144.id);
 
     // ThinkPad (business laptop)
     await link(thinkpad.id, businessRamAttr.id, businessRam16.id);
@@ -1014,7 +1140,7 @@ async function seedDatabase() {
     // Order 5: MSI Gaming Laptop
     await seedOrderItem(
       order5.id,
-      msi.id,
+      msiGaming.id,
       "MSI GE76 Raider",
       "2599.99",
       1,
@@ -1062,7 +1188,7 @@ async function seedDatabase() {
     );
     await seedOrderItem(
       order9.id,
-      msi.id,
+      msiGaming.id,
       "MSI GE76 Raider",
       "2599.99",
       1,
@@ -1487,21 +1613,21 @@ async function seedDatabase() {
     await linkProductToCollection(galaxy.id, promotionsCollection.id, 3); // 15% discount
 
     // New Arrivals Collection (latest products)
-    await linkProductToCollection(msi.id, newArrivalsCollection.id, 1);
+    await linkProductToCollection(msiGaming.id, newArrivalsCollection.id, 1);
     await linkProductToCollection(latitude.id, newArrivalsCollection.id, 2);
     await linkProductToCollection(galaxy.id, newArrivalsCollection.id, 3);
     await linkProductToCollection(herman.id, newArrivalsCollection.id, 4);
 
     // Premium Products Collection (high-end items)
     await linkProductToCollection(herman.id, premiumCollection.id, 1); // $1299
-    await linkProductToCollection(msi.id, premiumCollection.id, 2); // $2599
+    await linkProductToCollection(msiGaming.id, premiumCollection.id, 2); // $2599
     await linkProductToCollection(rog.id, premiumCollection.id, 3); // $2299
     await linkProductToCollection(latitude.id, premiumCollection.id, 4); // $2099
     await linkProductToCollection(thinkpad.id, premiumCollection.id, 5); // $1899
 
     // Gaming Zone Collection (gaming-related products)
     await linkProductToCollection(rog.id, gamingCollection.id, 1);
-    await linkProductToCollection(msi.id, gamingCollection.id, 2);
+    await linkProductToCollection(msiGaming.id, gamingCollection.id, 2);
 
     // Work From Home Collection (office furniture + laptops)
     await linkProductToCollection(thinkpad.id, workFromHomeCollection.id, 1);

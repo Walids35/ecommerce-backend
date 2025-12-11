@@ -12,6 +12,7 @@ import {
 } from "../../db/schema/subcategories";
 import { subSubCategories } from "../../db/schema/subsubcategories";
 import { productAttributeValues, products } from "../../db/schema/product";
+import { brands } from "../../db/schema/brands";
 import { NotFoundError, BadRequestError } from "../../utils/errors";
 
 export class ProductService {
@@ -57,6 +58,19 @@ export class ProductService {
       }
     }
 
+    // Validate brand if provided
+    if (data.brandId) {
+      const brand = await db
+        .select()
+        .from(brands)
+        .where(eq(brands.id, data.brandId))
+        .limit(1);
+
+      if (!brand.length) {
+        throw new NotFoundError("Brand not found");
+      }
+    }
+
     // Insert base product
     const [created] = await db
       .insert(products)
@@ -68,6 +82,7 @@ export class ProductService {
         discountPercentage: data.discountPercentage ?? "0",
         subCategoryId: data.subCategoryId ?? null,
         subSubCategoryId: data.subSubCategoryId ?? null,
+        brandId: data.brandId ?? null,
         images: data.images,
         datasheet: data.datasheet,
         isActive: data.isActive ?? true,
@@ -391,6 +406,19 @@ export class ProductService {
   async update(id: string, data: UpdateProductInputType) {
     const existing = await this.findById(id);
 
+    // Validate brand if being updated
+    if (data.brandId !== undefined && data.brandId !== null) {
+      const brand = await db
+        .select()
+        .from(brands)
+        .where(eq(brands.id, data.brandId))
+        .limit(1);
+
+      if (!brand.length) {
+        throw new NotFoundError("Brand not found");
+      }
+    }
+
     const payload: Record<string, any> = {
       updatedAt: new Date(),
     };
@@ -407,6 +435,7 @@ export class ProductService {
     if (data.displayOrder !== undefined) payload.displayOrder = data.displayOrder;
     if (data.subcategoryOrder !== undefined) payload.subcategoryOrder = data.subcategoryOrder;
     if (data.subsubcategoryOrder !== undefined) payload.subsubcategoryOrder = data.subsubcategoryOrder;
+    if (data.brandId !== undefined) payload.brandId = data.brandId;
 
     const [updated] = await db
       .update(products)
