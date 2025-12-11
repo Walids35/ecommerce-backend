@@ -27,6 +27,8 @@ export const products = pgTable(
     datasheet: text("datasheet"),
     isActive: boolean("is_active").default(true).notNull(),
     displayOrder: integer("display_order").default(0).notNull(),
+    subcategoryOrder: integer("subcategory_order").default(0).notNull(),
+    subsubcategoryOrder: integer("subsubcategory_order").default(0).notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
   }

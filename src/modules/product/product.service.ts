@@ -72,6 +72,8 @@ export class ProductService {
         datasheet: data.datasheet,
         isActive: data.isActive ?? true,
         displayOrder: data.displayOrder ?? 0,
+        subcategoryOrder: data.subcategoryOrder ?? data.displayOrder ?? 0,
+        subsubcategoryOrder: data.subsubcategoryOrder ?? data.displayOrder ?? 0,
       })
       .returning();
 
@@ -230,19 +232,41 @@ export class ProductService {
           orderBy = direction(products.updatedAt);
           break;
         case "displayOrder":
-          orderBy = direction(products.displayOrder);
+          // Context-aware: use appropriate order field
+          if (subSubCategoryId) {
+            orderBy = direction(products.subsubcategoryOrder);
+          } else {
+            orderBy = direction(products.subcategoryOrder);
+          }
+          break;
+        case "subcategoryOrder":
+          orderBy = direction(products.subcategoryOrder);
+          break;
+        case "subsubcategoryOrder":
+          orderBy = direction(products.subsubcategoryOrder);
           break;
         default:
-          orderBy = [asc(products.displayOrder), desc(products.createdAt)];
+          // Default: context-aware ordering
+          if (subSubCategoryId) {
+            orderBy = [asc(products.subsubcategoryOrder), desc(products.createdAt)];
+          } else {
+            orderBy = [asc(products.subcategoryOrder), desc(products.createdAt)];
+          }
       }
     } else {
-      // Legacy sort parameter support
-      orderBy =
-        sort === "price_asc"
-          ? asc(products.price)
-          : sort === "price_desc"
-          ? desc(products.price)
-          : [asc(products.displayOrder), desc(products.createdAt)];
+      // Legacy sort parameter support with context-aware ordering
+      if (sort === "price_asc") {
+        orderBy = asc(products.price);
+      } else if (sort === "price_desc") {
+        orderBy = desc(products.price);
+      } else {
+        // Context-aware default ordering
+        if (subSubCategoryId) {
+          orderBy = [asc(products.subsubcategoryOrder), desc(products.createdAt)];
+        } else {
+          orderBy = [asc(products.subcategoryOrder), desc(products.createdAt)];
+        }
+      }
     }
 
     const baseQuery = db
@@ -314,7 +338,7 @@ export class ProductService {
   }
 
   async findAll() {
-    const rows = await db.select().from(products).orderBy(asc(products.displayOrder), desc(products.createdAt));
+    const rows = await db.select().from(products).orderBy(asc(products.subcategoryOrder), desc(products.createdAt));
     return rows;
   }
 
@@ -381,6 +405,8 @@ export class ProductService {
     if (data.datasheet !== undefined) payload.datasheet = data.datasheet;
     if (data.isActive !== undefined) payload.isActive = data.isActive;
     if (data.displayOrder !== undefined) payload.displayOrder = data.displayOrder;
+    if (data.subcategoryOrder !== undefined) payload.subcategoryOrder = data.subcategoryOrder;
+    if (data.subsubcategoryOrder !== undefined) payload.subsubcategoryOrder = data.subsubcategoryOrder;
 
     const [updated] = await db
       .update(products)
@@ -420,13 +446,39 @@ export class ProductService {
     return updated;
   }
 
-  async updateProductDisplayOrder(id: string, displayOrder: number) {
+  async updateProductDisplayOrder(
+    id: string,
+    scope: "subcategory" | "subsubcategory",
+    displayOrder: number
+  ) {
+    // Fetch product to validate relationship
+    const existing = await this.findById(id);
+
+    // Validate scope matches product relationships
+    if (scope === "subcategory" && !existing.subCategoryId) {
+      throw new BadRequestError(
+        "Cannot update subcategoryOrder: product does not have a subcategory relationship"
+      );
+    }
+
+    if (scope === "subsubcategory" && !existing.subSubCategoryId) {
+      throw new BadRequestError(
+        "Cannot update subsubcategoryOrder: product does not have a subsubcategory relationship"
+      );
+    }
+
+    // Update appropriate field based on scope
+    const updatePayload: any = { updatedAt: new Date() };
+
+    if (scope === "subcategory") {
+      updatePayload.subcategoryOrder = displayOrder;
+    } else {
+      updatePayload.subsubcategoryOrder = displayOrder;
+    }
+
     const [updated] = await db
       .update(products)
-      .set({
-        displayOrder: displayOrder,
-        updatedAt: new Date(),
-      })
+      .set(updatePayload)
       .where(eq(products.id, id))
       .returning();
 
@@ -514,11 +566,16 @@ export class ProductService {
 
     const finalWhere = and(...finalWhereClauses);
 
+    // Context-aware ordering based on category type
+    const orderByClause = categoryType === "subsubcategory"
+      ? [asc(products.subsubcategoryOrder), desc(products.createdAt)]
+      : [asc(products.subcategoryOrder), desc(products.createdAt)];
+
     const rows = await db
       .select()
       .from(products)
       .where(finalWhere)
-      .orderBy(asc(products.displayOrder), desc(products.createdAt))
+      .orderBy(...orderByClause)
       .limit(limit)
       .offset(offset);
 

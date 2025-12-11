@@ -66,9 +66,17 @@ export class ProductController {
 
   async updateDisplayOrder(req: Request, res: Response) {
     const parsed = updateProductDisplayOrderInput.parse(req.body);
-    const { displayOrder } = parsed;
-    const updatedProduct = await service.updateProductDisplayOrder(req.params.id, displayOrder);
-    sendSuccess(res, updatedProduct, "Product display order updated successfully");
+    const { scope, displayOrder } = parsed;
+    const updatedProduct = await service.updateProductDisplayOrder(
+      req.params.id,
+      scope,
+      displayOrder
+    );
+    sendSuccess(
+      res,
+      updatedProduct,
+      `Product ${scope} order updated successfully`
+    );
   }
 
   async filterProducts(req: Request, res: Response) {

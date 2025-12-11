@@ -16,6 +16,8 @@ export const CreateProductInput = z.object({
   datasheet: z.string().optional(),
   isActive: z.boolean().optional(),
   displayOrder: z.number().int().optional(),
+  subcategoryOrder: z.number().int().nonnegative().optional(),
+  subsubcategoryOrder: z.number().int().nonnegative().optional(),
 
   attributes: z
     .array(
@@ -43,6 +45,8 @@ export const UpdateProductInput = z.object({
   datasheet: z.string().optional(),
   isActive: z.boolean().optional(),
   displayOrder: z.number().int().optional(),
+  subcategoryOrder: z.number().int().nonnegative().optional(),
+  subsubcategoryOrder: z.number().int().nonnegative().optional(),
 
   attributes: z
     .array(
@@ -55,8 +59,13 @@ export const UpdateProductInput = z.object({
 });
 
 export const updateProductDisplayOrderInput = z.object({
-  displayOrder: z.number().int(),
+  scope: z.enum(["subcategory", "subsubcategory"]),
+  displayOrder: z.number().int().nonnegative({
+    message: "Display order must be a non-negative integer"
+  }),
 });
+
+export type UpdateProductDisplayOrderInputType = z.infer<typeof updateProductDisplayOrderInput>;
 
 export type CreateProductInputType = z.infer<typeof CreateProductInput>;
 export type UpdateProductInputType = z.infer<typeof UpdateProductInput>;
