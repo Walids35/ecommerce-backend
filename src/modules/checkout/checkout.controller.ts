@@ -17,6 +17,7 @@ export class CheckoutController {
       orderNumber: order.orderNumber,
       customerName: parsed.customerName,
       customerEmail: parsed.customerEmail,
+      customerPhone: parsed.customerPhone,
       items: order.items.map((item: any) => ({
         productName: item.productName,
         quantity: item.quantity,
