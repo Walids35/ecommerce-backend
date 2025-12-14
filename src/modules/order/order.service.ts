@@ -465,7 +465,7 @@ export class OrderService {
       }
 
       // Case 3: Devis reverting FROM "processing" to earlier status - restore stock
-      const earlierStatuses = ["pending", "confirmed"];
+      const earlierStatuses = ["pending"];
       if (
         paymentMethod === "devis" &&
         oldStatus === "processing" &&

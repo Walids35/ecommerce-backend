@@ -56,19 +56,19 @@ export function generateOrderConfirmationEmail(data: OrderConfirmationData) {
       <table style="width: 100%; margin-top: 30px;">
         <tr>
           <td style="padding: 10px 0; text-align: right; color: #000; font-size: 14px;">Sous-total :</td>
-          <td style="padding: 10px 0; text-align: right; font-weight: 400; width: 120px; font-size: 14px;">$${data.subtotal}</td>
+          <td style="padding: 10px 0; text-align: right; font-weight: 400; width: 120px; font-size: 14px;">${data.subtotal} TND</td>
         </tr>
         <tr>
           <td style="padding: 10px 0; text-align: right; color: #000; font-size: 14px;">Livraison :</td>
-          <td style="padding: 10px 0; text-align: right; font-weight: 400; font-size: 14px;">$${data.shippingCost}</td>
+          <td style="padding: 10px 0; text-align: right; font-weight: 400; font-size: 14px;">${data.shippingCost} TND</td>
         </tr>
         <tr>
           <td style="padding: 10px 0; text-align: right; color: #000; font-size: 14px;">Taxes :</td>
-          <td style="padding: 10px 0; text-align: right; font-weight: 400; font-size: 14px;">$${data.taxAmount}</td>
+          <td style="padding: 10px 0; text-align: right; font-weight: 400; font-size: 14px;">${data.taxAmount} TND</td>
         </tr>
         <tr>
           <td style="padding: 20px 0 10px; text-align: right; font-size: 16px; font-weight: 500; color: #000;">Total :</td>
-          <td style="padding: 20px 0 10px; text-align: right; font-size: 16px; font-weight: 500; color: #000;">$${data.totalPrice}</td>
+          <td style="padding: 20px 0 10px; text-align: right; font-size: 16px; font-weight: 500; color: #000;">${data.totalPrice} TND</td>
         </tr>
       </table>
     </div>
