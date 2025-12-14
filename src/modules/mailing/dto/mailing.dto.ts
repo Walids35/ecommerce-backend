@@ -2,6 +2,7 @@ export interface OrderConfirmationData {
   orderNumber: string;
   customerName: string;
   customerEmail: string;
+  customerPhone?: string;
   items: Array<{
     productName: string;
     quantity: number;
