@@ -5,17 +5,17 @@ export function generateOrderConfirmationEmail(data: OrderConfirmationData) {
     .map(
       (item) => `
       <tr>
-        <td style="padding: 12px; border-bottom: 1px solid #eee;">${item.productName}</td>
-        <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: center;">${item.quantity}</td>
-        <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: right;">$${item.unitPrice}</td>
-        <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: right; font-weight: bold;">$${item.subtotal}</td>
+        <td style="padding: 15px 0; color: #000; font-size: 14px;">${item.productName}</td>
+        <td style="padding: 15px 0; text-align: center; color: #000; font-size: 14px;">${item.quantity}</td>
+        <td style="padding: 15px 0; text-align: right; color: #000; font-size: 14px;">$${item.unitPrice}</td>
+        <td style="padding: 15px 0; text-align: right; font-weight: 400; color: #000; font-size: 14px;">$${item.subtotal}</td>
       </tr>
     `
     )
     .join('');
 
   return {
-    subject: `Order Confirmation - ${data.orderNumber}`,
+    subject: `Confirmation de commande - ${data.orderNumber}`,
     html: `
 <!DOCTYPE html>
 <html>
@@ -23,29 +23,29 @@ export function generateOrderConfirmationEmail(data: OrderConfirmationData) {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
-<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-  <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
-    <h1 style="color: white; margin: 0; font-size: 28px;">Thank You for Your Order!</h1>
+<body style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; line-height: 1.8; color: #000; max-width: 600px; margin: 0 auto; padding: 40px 20px; background: #fff;">
+  <div style="text-align: center; padding: 40px 0;">
+    <h1 style="color: #000; margin: 0; font-size: 32px; font-weight: 300; letter-spacing: -0.5px;">Merci</h1>
   </div>
 
-  <div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px;">
-    <p style="font-size: 16px; margin-bottom: 20px;">Hello <strong>${data.customerName}</strong>,</p>
+  <div style="padding: 0 20px;">
+    <p style="font-size: 15px; margin-bottom: 30px; color: #000;">Bonjour <strong>${data.customerName}</strong>,</p>
 
-    <p style="font-size: 16px; margin-bottom: 30px;">
-      Your order has been successfully received and is being processed.
-      Your order number is <strong style="color: #667eea;">${data.orderNumber}</strong>
+    <p style="font-size: 15px; margin-bottom: 40px; color: #000;">
+      Votre commande a été reçue avec succès et est en cours de traitement.<br>
+      Numéro de commande : <strong>${data.orderNumber}</strong>
     </p>
 
-    <div style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 30px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-      <h2 style="color: #667eea; margin-top: 0; font-size: 20px; border-bottom: 2px solid #667eea; padding-bottom: 10px;">Order Details</h2>
+    <div style="margin-bottom: 50px;">
+      <h2 style="color: #000; margin-top: 0; margin-bottom: 30px; font-size: 18px; font-weight: 400; letter-spacing: 1px; text-transform: uppercase;">Détails de la commande</h2>
 
-      <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+      <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px;">
         <thead>
-          <tr style="background: #f5f5f5;">
-            <th style="padding: 12px; text-align: left; border-bottom: 2px solid #667eea;">Product</th>
-            <th style="padding: 12px; text-align: center; border-bottom: 2px solid #667eea;">Qty</th>
-            <th style="padding: 12px; text-align: right; border-bottom: 2px solid #667eea;">Price</th>
-            <th style="padding: 12px; text-align: right; border-bottom: 2px solid #667eea;">Total</th>
+          <tr>
+            <th style="padding: 15px 0; text-align: left; font-weight: 400; font-size: 13px; letter-spacing: 0.5px; text-transform: uppercase;">Produit</th>
+            <th style="padding: 15px 0; text-align: center; font-weight: 400; font-size: 13px; letter-spacing: 0.5px; text-transform: uppercase;">Qté</th>
+            <th style="padding: 15px 0; text-align: right; font-weight: 400; font-size: 13px; letter-spacing: 0.5px; text-transform: uppercase;">Prix</th>
+            <th style="padding: 15px 0; text-align: right; font-weight: 400; font-size: 13px; letter-spacing: 0.5px; text-transform: uppercase;">Total</th>
           </tr>
         </thead>
         <tbody>
@@ -53,46 +53,42 @@ export function generateOrderConfirmationEmail(data: OrderConfirmationData) {
         </tbody>
       </table>
 
-      <table style="width: 100%; margin-top: 20px;">
+      <table style="width: 100%; margin-top: 30px;">
         <tr>
-          <td style="padding: 8px; text-align: right; color: #666;">Subtotal:</td>
-          <td style="padding: 8px; text-align: right; font-weight: bold; width: 120px;">$${data.subtotal}</td>
+          <td style="padding: 10px 0; text-align: right; color: #000; font-size: 14px;">Sous-total :</td>
+          <td style="padding: 10px 0; text-align: right; font-weight: 400; width: 120px; font-size: 14px;">$${data.subtotal}</td>
         </tr>
         <tr>
-          <td style="padding: 8px; text-align: right; color: #666;">Shipping:</td>
-          <td style="padding: 8px; text-align: right; font-weight: bold;">$${data.shippingCost}</td>
+          <td style="padding: 10px 0; text-align: right; color: #000; font-size: 14px;">Livraison :</td>
+          <td style="padding: 10px 0; text-align: right; font-weight: 400; font-size: 14px;">$${data.shippingCost}</td>
         </tr>
         <tr>
-          <td style="padding: 8px; text-align: right; color: #666;">Tax:</td>
-          <td style="padding: 8px; text-align: right; font-weight: bold;">$${data.taxAmount}</td>
+          <td style="padding: 10px 0; text-align: right; color: #000; font-size: 14px;">Taxes :</td>
+          <td style="padding: 10px 0; text-align: right; font-weight: 400; font-size: 14px;">$${data.taxAmount}</td>
         </tr>
-        <tr style="border-top: 2px solid #667eea;">
-          <td style="padding: 12px 8px; text-align: right; font-size: 18px; font-weight: bold; color: #667eea;">Total:</td>
-          <td style="padding: 12px 8px; text-align: right; font-size: 18px; font-weight: bold; color: #667eea;">$${data.totalPrice}</td>
+        <tr>
+          <td style="padding: 20px 0 10px; text-align: right; font-size: 16px; font-weight: 500; color: #000;">Total :</td>
+          <td style="padding: 20px 0 10px; text-align: right; font-size: 16px; font-weight: 500; color: #000;">$${data.totalPrice}</td>
         </tr>
       </table>
     </div>
 
-    <div style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 30px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-      <h3 style="color: #667eea; margin-top: 0; font-size: 18px;">Shipping Address</h3>
-      <p style="margin: 5px 0; color: #666;">
+    <div style="margin-bottom: 40px;">
+      <h3 style="color: #000; margin-top: 0; margin-bottom: 15px; font-size: 14px; font-weight: 400; letter-spacing: 0.5px; text-transform: uppercase;">Adresse de livraison</h3>
+      <p style="margin: 0; color: #000; font-size: 14px; line-height: 1.6;">
         ${data.shippingAddress.streetAddress}<br>
         ${data.shippingAddress.city}, ${data.shippingAddress.postalCode}
       </p>
     </div>
 
-    <div style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 30px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-      <h3 style="color: #667eea; margin-top: 0; font-size: 18px;">Payment Method</h3>
-      <p style="margin: 5px 0; color: #666; text-transform: capitalize;">${data.paymentMethod}</p>
+    <div style="margin-bottom: 50px;">
+      <h3 style="color: #000; margin-top: 0; margin-bottom: 15px; font-size: 14px; font-weight: 400; letter-spacing: 0.5px; text-transform: uppercase;">Méthode de paiement</h3>
+      <p style="margin: 0; color: #000; font-size: 14px; text-transform: capitalize;">${data.paymentMethod}</p>
     </div>
 
-    <div style="text-align: center; margin-top: 30px;">
-      <a href="${data.orderTrackingUrl}" style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px 40px; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 16px;">Track Your Order</a>
-    </div>
-
-    <p style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; color: #666; font-size: 14px; text-align: center;">
-      If you have any questions, please don't hesitate to contact us.<br>
-      Thank you for shopping with us!
+    <p style="margin-top: 50px; padding-top: 30px; color: #000; font-size: 13px; text-align: center; opacity: 0.7;">
+      Si vous avez des questions, n'hésitez pas à nous contacter.<br>
+      Merci d'avoir fait vos achats chez nous.
     </p>
   </div>
 </body>
