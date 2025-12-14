@@ -10,7 +10,9 @@
       "Bash(npm run build:*)",
       "Bash(python -m json.tool:*)",
       "Bash(npm install:*)",
-      "Bash(git merge:*)"
+      "Bash(git merge:*)",
+      "WebFetch(domain:www.npmjs.com)",
+      "WebSearch"
     ],
     "deny": [],
     "ask": []
