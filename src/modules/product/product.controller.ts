@@ -1,7 +1,11 @@
 // product.controller.ts
 import { Request, Response } from "express";
 import { ProductService } from "./product.service";
-import { CreateProductInput, updateProductDisplayOrderInput, UpdateProductInput } from "./dto/product.dto";
+import {
+  CreateProductInput,
+  updateProductDisplayOrderInput,
+  UpdateProductInput,
+} from "./dto/product.dto";
 import { sendSuccess, sendCreated, sendPaginated } from "../../utils/response";
 import { FilterProductsInput } from "./dto/filter.dto";
 
@@ -38,9 +42,13 @@ export class ProductController {
   async findAllWithSearch(req: Request, res: Response) {
     const result = await service.findAllWithSearch({
       search: req.query.search as string,
-      subCategoryId: req.query.subCategoryId ? Number(req.query.subCategoryId) : undefined,
-      subSubCategoryId: req.query.subSubCategoryId ? Number(req.query.subSubCategoryId) : undefined,
-      isActive: req.query.isActive ? req.query.isActive === 'true' : true,
+      subCategoryId: req.query.subCategoryId
+        ? Number(req.query.subCategoryId)
+        : undefined,
+      subSubCategoryId: req.query.subSubCategoryId
+        ? Number(req.query.subSubCategoryId)
+        : undefined,
+      isActive: req.query.isActive ? req.query.isActive === "true" : true,
       page: req.query.page ? Number(req.query.page) : 1,
       limit: req.query.limit ? Number(req.query.limit) : 10,
       sort: req.query.sort as string,
@@ -91,6 +99,26 @@ export class ProductController {
         total: result.total,
       },
       "Products retrieved successfully"
+    );
+  }
+
+  async findDiscountedProducts(req: Request, res: Response) {
+    const result = await service.findDiscountedProducts({
+      page: req.query.page ? Number(req.query.page) : 1,
+      limit: req.query.limit ? Number(req.query.limit) : 10,
+      sort: req.query.sort as string,
+      sortBy: req.query.sortBy as string,
+    });
+
+    sendPaginated(
+      res,
+      result.data,
+      {
+        page: result.page,
+        limit: result.limit,
+        total: result.total,
+      },
+      "Discounted products retrieved successfully"
     );
   }
 }

@@ -22,7 +22,9 @@ export class ProductService {
   async create(data: CreateProductInputType) {
     // Validate at least one category is provided
     if (!data.subCategoryId && !data.subSubCategoryId) {
-      throw new BadRequestError("At least one of subCategoryId or subSubCategoryId must be provided");
+      throw new BadRequestError(
+        "At least one of subCategoryId or subSubCategoryId must be provided"
+      );
     }
 
     // Validate subcategory if provided
@@ -51,7 +53,10 @@ export class ProductService {
       }
 
       // If both categories provided, validate relationship
-      if (data.subCategoryId && subsubcategory[0].subCategoryId !== data.subCategoryId) {
+      if (
+        data.subCategoryId &&
+        subsubcategory[0].subCategoryId !== data.subCategoryId
+      ) {
         throw new BadRequestError(
           `Subsubcategory ${data.subSubCategoryId} does not belong to subcategory ${data.subCategoryId}`
         );
@@ -136,7 +141,7 @@ export class ProductService {
         if (attribute.subSubCategoryId !== subSubCategoryId) {
           throw new BadRequestError(
             `Attribute ${attr.attributeId} does not belong to subsubcategory ${subSubCategoryId}. ` +
-            `When a product has a subsubcategory, it must use attributes from that subsubcategory only.`
+              `When a product has a subsubcategory, it must use attributes from that subsubcategory only.`
           );
         }
       } else if (subCategoryId) {
@@ -206,7 +211,7 @@ export class ProductService {
       whereClause.push(
         or(
           ilike(products.name, `%${search}%`),
-          sql`${products.id}::text ILIKE ${'%' + search + '%'}`
+          sql`${products.id}::text ILIKE ${"%" + search + "%"}`
         )
       );
     }
@@ -263,9 +268,15 @@ export class ProductService {
         default:
           // Default: context-aware ordering
           if (subSubCategoryId) {
-            orderBy = [asc(products.subsubcategoryOrder), desc(products.createdAt)];
+            orderBy = [
+              asc(products.subsubcategoryOrder),
+              desc(products.createdAt),
+            ];
           } else {
-            orderBy = [asc(products.subcategoryOrder), desc(products.createdAt)];
+            orderBy = [
+              asc(products.subcategoryOrder),
+              desc(products.createdAt),
+            ];
           }
       }
     } else {
@@ -277,7 +288,10 @@ export class ProductService {
       } else {
         // Context-aware default ordering
         if (subSubCategoryId) {
-          orderBy = [asc(products.subsubcategoryOrder), desc(products.createdAt)];
+          orderBy = [
+            asc(products.subsubcategoryOrder),
+            desc(products.createdAt),
+          ];
         } else {
           orderBy = [asc(products.subcategoryOrder), desc(products.createdAt)];
         }
@@ -294,9 +308,7 @@ export class ProductService {
       ? baseQuery.orderBy(...orderBy)
       : baseQuery.orderBy(orderBy);
 
-    const rows = await orderedQuery
-      .limit(limit)
-      .offset(offset);
+    const rows = await orderedQuery.limit(limit).offset(offset);
 
     // Fetch attribute values for all product IDs
     const ids = rows.map((p) => p.id);
@@ -353,7 +365,10 @@ export class ProductService {
   }
 
   async findAll() {
-    const rows = await db.select().from(products).orderBy(asc(products.subcategoryOrder), desc(products.createdAt));
+    const rows = await db
+      .select()
+      .from(products)
+      .orderBy(asc(products.subcategoryOrder), desc(products.createdAt));
     return rows;
   }
 
@@ -432,9 +447,12 @@ export class ProductService {
     if (data.images !== undefined) payload.images = data.images;
     if (data.datasheet !== undefined) payload.datasheet = data.datasheet;
     if (data.isActive !== undefined) payload.isActive = data.isActive;
-    if (data.displayOrder !== undefined) payload.displayOrder = data.displayOrder;
-    if (data.subcategoryOrder !== undefined) payload.subcategoryOrder = data.subcategoryOrder;
-    if (data.subsubcategoryOrder !== undefined) payload.subsubcategoryOrder = data.subsubcategoryOrder;
+    if (data.displayOrder !== undefined)
+      payload.displayOrder = data.displayOrder;
+    if (data.subcategoryOrder !== undefined)
+      payload.subcategoryOrder = data.subcategoryOrder;
+    if (data.subsubcategoryOrder !== undefined)
+      payload.subsubcategoryOrder = data.subsubcategoryOrder;
     if (data.brandId !== undefined) payload.brandId = data.brandId;
 
     const [updated] = await db
@@ -564,7 +582,7 @@ export class ProductService {
     let matchingProductIds: string[] = [];
 
     if (filters.length > 0) {
-      const filterConditions = filters.map(filter =>
+      const filterConditions = filters.map((filter) =>
         and(
           eq(productAttributeValues.attributeId, filter.attributeId),
           inArray(productAttributeValues.attributeValueId, filter.valueIds)
@@ -578,7 +596,9 @@ export class ProductService {
         .from(productAttributeValues)
         .where(or(...filterConditions))
         .groupBy(productAttributeValues.productId)
-        .having(sql`COUNT(DISTINCT ${productAttributeValues.attributeId}) = ${filters.length}`);
+        .having(
+          sql`COUNT(DISTINCT ${productAttributeValues.attributeId}) = ${filters.length}`
+        );
 
       const result = await subquery;
       matchingProductIds = result.map((r) => r.productId);
@@ -596,9 +616,10 @@ export class ProductService {
     const finalWhere = and(...finalWhereClauses);
 
     // Context-aware ordering based on category type
-    const orderByClause = categoryType === "subsubcategory"
-      ? [asc(products.subsubcategoryOrder), desc(products.createdAt)]
-      : [asc(products.subcategoryOrder), desc(products.createdAt)];
+    const orderByClause =
+      categoryType === "subsubcategory"
+        ? [asc(products.subsubcategoryOrder), desc(products.createdAt)]
+        : [asc(products.subcategoryOrder), desc(products.createdAt)];
 
     const rows = await db
       .select()
@@ -651,6 +672,129 @@ export class ProductService {
       .select({ count: sql<number>`COUNT(*)` })
       .from(products)
       .where(finalWhere);
+
+    return {
+      page,
+      limit,
+      total: Number(count),
+      data: final,
+    };
+  }
+  async findDiscountedProducts(query: {
+    page?: number;
+    limit?: number;
+    sort?: string;
+    sortBy?: string;
+  }) {
+    const { page = 1, limit = 10, sort = "newest", sortBy } = query;
+
+    const offset = (page - 1) * limit;
+
+    let whereClause: any[] = [];
+
+    // Filter for discounted products
+    whereClause.push(sql`${products.discountPercentage} > 0`);
+
+    // Filter by isActive (defaults to true)
+    whereClause.push(eq(products.isActive, true));
+
+    // Dynamic sorting with sortBy parameter
+    let orderBy;
+    if (sortBy) {
+      const direction = sort === "asc" ? asc : desc;
+      switch (sortBy) {
+        case "name":
+          orderBy = direction(products.name);
+          break;
+        case "price":
+          orderBy = direction(products.price);
+          break;
+        case "stock":
+          orderBy = direction(products.stock);
+          break;
+        case "discountPercentage":
+          orderBy = direction(products.discountPercentage);
+          break;
+        case "createdAt":
+          orderBy = direction(products.createdAt);
+          break;
+        case "updatedAt":
+          orderBy = direction(products.updatedAt);
+          break;
+        case "displayOrder":
+          orderBy = direction(products.displayOrder);
+          break;
+        default:
+          orderBy = desc(products.createdAt);
+      }
+    } else {
+      // Legacy sort parameter support
+      if (sort === "price_asc") {
+        orderBy = asc(products.price);
+      } else if (sort === "price_desc") {
+        orderBy = desc(products.price);
+      } else {
+        orderBy = desc(products.createdAt);
+      }
+    }
+
+    const baseQuery = db
+      .select()
+      .from(products)
+      .where(whereClause.length ? and(...whereClause) : undefined);
+
+    // Apply ordering
+    const orderedQuery = Array.isArray(orderBy)
+      ? baseQuery.orderBy(...orderBy)
+      : baseQuery.orderBy(orderBy);
+
+    const rows = await orderedQuery.limit(limit).offset(offset);
+
+    // Fetch attribute values for all product IDs
+    const ids = rows.map((p) => p.id);
+
+    let attributeRows: any[] = [];
+    if (ids.length > 0) {
+      attributeRows = await db
+        .select({
+          productId: productAttributeValues.productId,
+          attributeId: attributes.id,
+          attributeName: attributes.name,
+          valueId: attributeValues.id,
+          value: attributeValues.value,
+        })
+        .from(productAttributeValues)
+        .innerJoin(
+          attributes,
+          eq(productAttributeValues.attributeId, attributes.id)
+        )
+        .innerJoin(
+          attributeValues,
+          eq(productAttributeValues.attributeValueId, attributeValues.id)
+        )
+        .where(inArray(productAttributeValues.productId, ids));
+    }
+
+    const groupedAttributes = attributeRows.reduce((acc, row) => {
+      if (!acc[row.productId]) acc[row.productId] = [];
+      acc[row.productId].push({
+        attributeId: row.attributeId,
+        attributeName: row.attributeName,
+        valueId: row.valueId,
+        value: row.value,
+      });
+      return acc;
+    }, {} as Record<string, any[]>);
+
+    const final = rows.map((p) => ({
+      ...p,
+      attributes: groupedAttributes[p.id] ?? [],
+    }));
+
+    const [{ count }] = await db
+      .select({ count: sql<number>`COUNT(*)` })
+      .from(products)
+      .where(whereClause.length ? and(...whereClause) : undefined);
 
     return {
       page,
