@@ -18,7 +18,7 @@ export class SubSubCategoryController {
 
   async getAll(req: Request, res: Response, next: NextFunction) {
     try {
-      const result = await service.findAll();
+      const result = await service.findAll(req.language);
       sendSuccess(res, result, "Subsubcategories retrieved successfully");
     } catch (error) {
       next(error);
@@ -28,7 +28,7 @@ export class SubSubCategoryController {
   async getById(req: Request, res: Response, next: NextFunction) {
     try {
       const id = Number(req.params.id);
-      const result = await service.findById(id);
+      const result = await service.findById(req.language, id);
       sendSuccess(res, result, "Subsubcategory retrieved successfully");
     } catch (error) {
       next(error);
@@ -38,7 +38,7 @@ export class SubSubCategoryController {
   async getBySubCategoryId(req: Request, res: Response, next: NextFunction) {
     try {
       const subCategoryId = Number(req.params.subCategoryId);
-      const result = await service.findBySubCategoryId(subCategoryId);
+      const result = await service.findBySubCategoryId(req.language, subCategoryId);
       sendSuccess(res, result, "Subsubcategories retrieved successfully");
     } catch (error) {
       next(error);
@@ -48,7 +48,7 @@ export class SubSubCategoryController {
   async getBySlug(req: Request, res: Response, next: NextFunction) {
     try {
       const { slug } = req.params;
-      const result = await service.findBySlug(slug);
+      const result = await service.findBySlug(req.language, slug);
       sendSuccess(res, result, "Subsubcategory retrieved successfully");
     } catch (error) {
       next(error);

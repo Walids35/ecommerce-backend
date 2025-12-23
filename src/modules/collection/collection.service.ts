@@ -10,7 +10,12 @@ import { collections, productCollections } from "../../db/schema/collections";
 import { products } from "../../db/schema/product";
 import { subCategories } from "../../db/schema/subcategories";
 import { subSubCategories } from "../../db/schema/subsubcategories";
+import { collectionTranslations } from "../../db/schema/translations/collection-translations";
+import { productTranslations } from "../../db/schema/translations/product-translations";
+import { subcategoryTranslations } from "../../db/schema/translations/subcategory-translations";
+import { subsubcategoryTranslations } from "../../db/schema/translations/subsubcategory-translations";
 import { NotFoundError, BadRequestError } from "../../utils/errors";
+import { SupportedLanguage } from "../../middlewares/language";
 
 export class CollectionService {
   // ---------------------------
@@ -41,13 +46,34 @@ export class CollectionService {
       })
       .returning();
 
+    // Insert translations if provided
+    if (data.translations) {
+      const translationRecords = [];
+
+      for (const [lang, trans] of Object.entries(data.translations)) {
+        if (trans) {
+          translationRecords.push({
+            collectionId: created.id,
+            language: lang,
+            name: trans.name,
+            description: trans.description,
+            slug: trans.slug,
+          });
+        }
+      }
+
+      if (translationRecords.length > 0) {
+        await db.insert(collectionTranslations).values(translationRecords);
+      }
+    }
+
     return created;
   }
 
   // ---------------------------
   // FIND ALL COLLECTIONS
   // ---------------------------
-  async findAll(filters?: {
+  async findAll(language: SupportedLanguage, filters?: {
     page?: number;
     limit?: number;
     isActive?: boolean;
@@ -65,8 +91,8 @@ export class CollectionService {
     if (filters?.search) {
       conditions.push(
         or(
-          ilike(collections.name, `%${filters.search}%`),
-          ilike(collections.description, `%${filters.search}%`)
+          ilike(collectionTranslations.name, `%${filters.search}%`),
+          ilike(collectionTranslations.description, `%${filters.search}%`)
         )
       );
     }
@@ -77,9 +103,9 @@ export class CollectionService {
     const results = await db
       .select({
         id: collections.id,
-        name: collections.name,
-        description: collections.description,
-        slug: collections.slug,
+        name: collectionTranslations.name,
+        description: collectionTranslations.description,
+        slug: collectionTranslations.slug,
         image: collections.image,
         isActive: collections.isActive,
         displayOrder: collections.displayOrder,
@@ -88,10 +114,17 @@ export class CollectionService {
         productCount: sql<number>`CAST(COUNT(${productCollections.id}) AS INTEGER)`,
       })
       .from(collections)
+      .innerJoin(
+        collectionTranslations,
+        and(
+          eq(collectionTranslations.collectionId, collections.id),
+          eq(collectionTranslations.language, language)
+        )
+      )
       .leftJoin(productCollections, eq(collections.id, productCollections.collectionId))
       .where(whereClause)
-      .groupBy(collections.id)
-      .orderBy(asc(collections.displayOrder), asc(collections.name))
+      .groupBy(collections.id, collectionTranslations.id)
+      .orderBy(asc(collections.displayOrder), asc(collectionTranslations.name))
       .limit(limit)
       .offset(offset);
 
@@ -99,6 +132,13 @@ export class CollectionService {
     const [totalResult] = await db
       .select({ count: count() })
       .from(collections)
+      .innerJoin(
+        collectionTranslations,
+        and(
+          eq(collectionTranslations.collectionId, collections.id),
+          eq(collectionTranslations.language, language)
+        )
+      )
       .where(whereClause);
 
     return {
@@ -112,13 +152,13 @@ export class CollectionService {
   // ---------------------------
   // FIND COLLECTION BY ID
   // ---------------------------
-  async findById(id: number) {
+  async findById(language: SupportedLanguage, id: number) {
     const [result] = await db
       .select({
         id: collections.id,
-        name: collections.name,
-        description: collections.description,
-        slug: collections.slug,
+        name: collectionTranslations.name,
+        description: collectionTranslations.description,
+        slug: collectionTranslations.slug,
         image: collections.image,
         isActive: collections.isActive,
         displayOrder: collections.displayOrder,
@@ -127,21 +167,43 @@ export class CollectionService {
         productCount: sql<number>`CAST(COUNT(${productCollections.id}) AS INTEGER)`,
       })
       .from(collections)
+      .innerJoin(
+        collectionTranslations,
+        and(
+          eq(collectionTranslations.collectionId, collections.id),
+          eq(collectionTranslations.language, language)
+        )
+      )
       .leftJoin(productCollections, eq(collections.id, productCollections.collectionId))
       .where(eq(collections.id, id))
-      .groupBy(collections.id);
+      .groupBy(collections.id, collectionTranslations.id);
 
     if (!result) {
       throw new NotFoundError("Collection not found");
     }
 
-    return result;
+    // Fetch all translations for this collection
+    const allTranslations = await db
+      .select({
+        language: collectionTranslations.language,
+        name: collectionTranslations.name,
+        description: collectionTranslations.description,
+        slug: collectionTranslations.slug,
+      })
+      .from(collectionTranslations)
+      .where(eq(collectionTranslations.collectionId, id));
+
+    return {
+      ...result,
+      translations: allTranslations,
+    };
   }
 
   // ---------------------------
   // FIND COLLECTION WITH PRODUCTS
   // ---------------------------
   async findByIdWithProducts(
+    language: SupportedLanguage,
     id: number,
     filters?: {
       page?: number;
@@ -151,7 +213,7 @@ export class CollectionService {
     }
   ) {
     // First, verify collection exists
-    const collection = await this.findById(id);
+    const collection = await this.findById(language, id);
 
     const page = filters?.page ?? 1;
     const limit = filters?.limit ?? 20;
@@ -163,7 +225,7 @@ export class CollectionService {
     let orderByClause;
     switch (sortBy) {
       case "name":
-        orderByClause = sortOrder === "asc" ? asc(products.name) : desc(products.name);
+        orderByClause = sortOrder === "asc" ? asc(productTranslations.name) : desc(productTranslations.name);
         break;
       case "price":
         orderByClause = sortOrder === "asc" ? asc(products.price) : desc(products.price);
@@ -181,8 +243,8 @@ export class CollectionService {
     const productResults = await db
       .select({
         id: products.id,
-        name: products.name,
-        description: products.description,
+        name: productTranslations.name,
+        description: productTranslations.description,
         price: products.price,
         stock: products.stock,
         discountPercentage: products.discountPercentage,
@@ -195,6 +257,13 @@ export class CollectionService {
       })
       .from(productCollections)
       .innerJoin(products, eq(productCollections.productId, products.id))
+      .innerJoin(
+        productTranslations,
+        and(
+          eq(productTranslations.productId, products.id),
+          eq(productTranslations.language, language)
+        )
+      )
       .where(eq(productCollections.collectionId, id))
       .orderBy(orderByClause)
       .limit(limit)
@@ -208,10 +277,17 @@ export class CollectionService {
         if (product.subCategoryId) {
           const [subCat] = await db
             .select({
-              subCategoryName: subCategories.name,
+              subCategoryName: subcategoryTranslations.name,
               categoryId: subCategories.categoryId,
             })
             .from(subCategories)
+            .innerJoin(
+              subcategoryTranslations,
+              and(
+                eq(subcategoryTranslations.subcategoryId, subCategories.id),
+                eq(subcategoryTranslations.language, language)
+              )
+            )
             .where(eq(subCategories.id, product.subCategoryId))
             .limit(1);
 
@@ -223,10 +299,17 @@ export class CollectionService {
         } else if (product.subSubCategoryId) {
           const [subSubCat] = await db
             .select({
-              subSubCategoryName: subSubCategories.name,
+              subSubCategoryName: subsubcategoryTranslations.name,
               subCategoryId: subSubCategories.subCategoryId,
             })
             .from(subSubCategories)
+            .innerJoin(
+              subsubcategoryTranslations,
+              and(
+                eq(subsubcategoryTranslations.subsubcategoryId, subSubCategories.id),
+                eq(subsubcategoryTranslations.language, language)
+              )
+            )
             .where(eq(subSubCategories.id, product.subSubCategoryId))
             .limit(1);
 
@@ -267,7 +350,7 @@ export class CollectionService {
   // ---------------------------
   async update(id: number, data: UpdateCollectionInput) {
     // Check if collection exists
-    await this.findById(id);
+    await this.findById('en', id);
 
     // If updating slug, check it's not taken
     if (data.slug) {
@@ -282,15 +365,72 @@ export class CollectionService {
       }
     }
 
-    // Update collection
+    // Separate translations from base data
+    const { translations, ...baseData } = data;
+
+    // Build base table payload
+    const basePayload: Record<string, any> = {
+      updatedAt: new Date(),
+    };
+
+    if (baseData.name !== undefined) basePayload.name = baseData.name;
+    if (baseData.description !== undefined) basePayload.description = baseData.description;
+    if (baseData.slug !== undefined) basePayload.slug = baseData.slug;
+    if (baseData.image !== undefined) basePayload.image = baseData.image;
+    if (baseData.isActive !== undefined) basePayload.isActive = baseData.isActive;
+    if (baseData.displayOrder !== undefined) basePayload.displayOrder = baseData.displayOrder;
+
+    // Update base table
     const [updated] = await db
       .update(collections)
-      .set({
-        ...data,
-        updatedAt: new Date(),
-      })
+      .set(basePayload)
       .where(eq(collections.id, id))
       .returning();
+
+    // Upsert translations if provided
+    if (translations) {
+      for (const [lang, trans] of Object.entries(translations)) {
+        if (trans) {
+          const existing = await db
+            .select()
+            .from(collectionTranslations)
+            .where(
+              and(
+                eq(collectionTranslations.collectionId, id),
+                eq(collectionTranslations.language, lang)
+              )
+            )
+            .limit(1);
+
+          if (existing.length > 0) {
+            // Update existing translation
+            await db
+              .update(collectionTranslations)
+              .set({
+                name: trans.name,
+                description: trans.description,
+                slug: trans.slug,
+                updatedAt: new Date(),
+              })
+              .where(
+                and(
+                  eq(collectionTranslations.collectionId, id),
+                  eq(collectionTranslations.language, lang)
+                )
+              );
+          } else {
+            // Insert new translation
+            await db.insert(collectionTranslations).values({
+              collectionId: id,
+              language: lang,
+              name: trans.name,
+              description: trans.description,
+              slug: trans.slug,
+            });
+          }
+        }
+      }
+    }
 
     return updated;
   }
@@ -300,7 +440,7 @@ export class CollectionService {
   // ---------------------------
   async delete(id: number) {
     // Check if collection exists
-    await this.findById(id);
+    await this.findById('en', id);
 
     // Soft delete
     await db
@@ -319,7 +459,7 @@ export class CollectionService {
   // ---------------------------
   async addProducts(collectionId: number, data: AddProductsToCollectionInput) {
     // Check if collection exists
-    await this.findById(collectionId);
+    await this.findById('en', collectionId);
 
     // Validate all products exist
     const productList = await db
@@ -351,7 +491,7 @@ export class CollectionService {
   // ---------------------------
   async removeProducts(collectionId: number, data: RemoveProductsFromCollectionInput) {
     // Check if collection exists
-    await this.findById(collectionId);
+    await this.findById('en', collectionId);
 
     // Delete from junction table
     await db
@@ -368,7 +508,7 @@ export class CollectionService {
 
   async toggleActiveStatus(collectionId: number) {
     // Check if collection exists
-    const collection = await this.findById(collectionId); 
+    const collection = await this.findById('en', collectionId); 
     // Toggle isActive status
     const newStatus = !collection.isActive;
 
@@ -389,6 +529,7 @@ export class CollectionService {
   // GET PRODUCTS BY COLLECTION
   // ---------------------------
   async getProductsByCollection(
+    language: SupportedLanguage,
     collectionId: number,
     filters?: {
       page?: number;
@@ -402,7 +543,7 @@ export class CollectionService {
     }
   ) {
     // Check if collection exists
-    await this.findById(collectionId);
+    await this.findById('en', collectionId);
 
     const page = filters?.page ?? 1;
     const limit = filters?.limit ?? 20;
@@ -416,8 +557,8 @@ export class CollectionService {
     }
     if (filters?.search) {
       const searchCondition = or(
-        ilike(products.name, `%${filters.search}%`),
-        ilike(products.description, `%${filters.search}%`)
+        ilike(productTranslations.name, `%${filters.search}%`),
+        ilike(productTranslations.description, `%${filters.search}%`)
       );
       if (searchCondition) {
         conditions.push(searchCondition);
@@ -438,7 +579,7 @@ export class CollectionService {
     let orderByClause;
     switch (sortBy) {
       case "name":
-        orderByClause = sortOrder === "asc" ? asc(products.name) : desc(products.name);
+        orderByClause = sortOrder === "asc" ? asc(productTranslations.name) : desc(productTranslations.name);
         break;
       case "price":
         orderByClause = sortOrder === "asc" ? asc(products.price) : desc(products.price);
@@ -456,8 +597,8 @@ export class CollectionService {
     const productResults = await db
       .select({
         id: products.id,
-        name: products.name,
-        description: products.description,
+        name: productTranslations.name,
+        description: productTranslations.description,
         price: products.price,
         stock: products.stock,
         discountPercentage: products.discountPercentage,
@@ -468,6 +609,13 @@ export class CollectionService {
       })
       .from(productCollections)
       .innerJoin(products, eq(productCollections.productId, products.id))
+      .innerJoin(
+        productTranslations,
+        and(
+          eq(productTranslations.productId, products.id),
+          eq(productTranslations.language, language)
+        )
+      )
       .where(whereClause)
       .orderBy(orderByClause)
       .limit(limit)
@@ -478,6 +626,13 @@ export class CollectionService {
       .select({ count: count() })
       .from(productCollections)
       .innerJoin(products, eq(productCollections.productId, products.id))
+      .innerJoin(
+        productTranslations,
+        and(
+          eq(productTranslations.productId, products.id),
+          eq(productTranslations.language, language)
+        )
+      )
       .where(whereClause);
 
     return {

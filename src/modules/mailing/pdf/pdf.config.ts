@@ -1,6 +1,6 @@
 export const PDF_CONFIG = {
   // Company branding
-  companyName: process.env.COMPANY_NAME || 'E-Commerce Store',
+  companyName: process.env.COMPANY_NAME || 'Monde Du Chef Store',
   companyAddress: process.env.COMPANY_ADDRESS || '123 Rue du Commerce, 75001 Paris, France',
   companyPhone: process.env.COMPANY_PHONE || '+33 1 23 45 67 89',
   companyEmail: process.env.COMPANY_EMAIL || process.env.RESEND_FROM_EMAIL || 'contact@example.com',

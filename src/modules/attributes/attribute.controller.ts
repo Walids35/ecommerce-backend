@@ -20,7 +20,7 @@ export class AttributeController {
 
   async getAll(req: Request, res: Response, next: NextFunction) {
     try {
-      const result = await service.findAll();
+      const result = await service.findAll(req.language);
       sendSuccess(res, result, "Attributes retrieved successfully");
     } catch (error) {
       next(error);
@@ -30,7 +30,7 @@ export class AttributeController {
   async getById(req: Request, res: Response, next: NextFunction) {
     try {
       const id = Number(req.params.id);
-      const result = await service.findById(id);
+      const result = await service.findById(req.language, id);
       sendSuccess(res, result, "Attribute retrieved successfully");
     } catch (error) {
       next(error);
@@ -46,7 +46,7 @@ export class AttributeController {
         return sendError(res, "Query parameter 'type' must be 'subcategory' or 'subsubcategory'", 400);
       }
 
-      const result = await service.findByParentId(parentId, parentType);
+      const result = await service.findByParentId(req.language, parentId, parentType);
       sendSuccess(res, result, "Attributes retrieved successfully");
     } catch (error) {
       next(error);
@@ -89,7 +89,7 @@ export class AttributeController {
   async getValues(req: Request, res: Response, next: NextFunction) {
     try {
       const attributeId = Number(req.params.attributeId);
-      const result = await service.getValuesByAttribute(attributeId);
+      const result = await service.getValuesByAttribute(req.language, attributeId);
       sendSuccess(res, result, "Attribute values retrieved successfully");
     } catch (error) {
       next(error);
@@ -115,7 +115,7 @@ export class AttributeController {
         return sendError(res, "Query parameter 'type' must be 'subcategory' or 'subsubcategory'", 400);
       }
 
-      const result = await service.getAttributesWithValuesByParent(parentId, parentType);
+      const result = await service.getAttributesWithValuesByParent(req.language, parentId, parentType);
       sendSuccess(res, result, "Attributes with values retrieved successfully");
     } catch (error) {
       next(error);

@@ -211,6 +211,8 @@ export class PdfGeneratorService {
   ): void {
     const rightAlign = 545;
     const labelX = 350;
+    const valueWidth = 100;
+    const valueX = rightAlign - valueWidth;
     let y = startY + 20;
 
     doc
@@ -220,25 +222,25 @@ export class PdfGeneratorService {
 
     // Subtotal
     doc.text('Sous-total:', labelX, y);
-    doc.text(`${PDF_CONFIG.currency}${data.subtotal}`, rightAlign, y, {
+    doc.text(`${PDF_CONFIG.currency}${data.subtotal}`, valueX, y, {
       align: 'right',
-      width: 50,
+      width: valueWidth,
     });
     y += 20;
 
     // Shipping
     doc.text('Frais de livraison:', labelX, y);
-    doc.text(`${PDF_CONFIG.currency}${data.shippingCost}`, rightAlign, y, {
+    doc.text(`${PDF_CONFIG.currency}${data.shippingCost}`, valueX, y, {
       align: 'right',
-      width: 50,
+      width: valueWidth,
     });
     y += 20;
 
     // Tax
     doc.text('Taxes:', labelX, y);
-    doc.text(`${PDF_CONFIG.currency}${data.taxAmount}`, rightAlign, y, {
+    doc.text(`${PDF_CONFIG.currency}${data.taxAmount}`, valueX, y, {
       align: 'right',
-      width: 50,
+      width: valueWidth,
     });
     y += 25;
 
@@ -253,9 +255,9 @@ export class PdfGeneratorService {
     // Total (bold, larger)
     doc.fontSize(12).font(PDF_CONFIG.fonts.bold);
     doc.text('TOTAL:', labelX, y);
-    doc.text(`${PDF_CONFIG.currency}${data.totalPrice}`, rightAlign, y, {
+    doc.text(`${PDF_CONFIG.currency}${data.totalPrice}`, valueX, y, {
       align: 'right',
-      width: 50,
+      width: valueWidth,
     });
   }
 

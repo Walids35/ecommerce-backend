@@ -7,8 +7,8 @@ export function generateOrderConfirmationEmail(data: OrderConfirmationData) {
       <tr>
         <td style="padding: 15px 0; color: #000; font-size: 14px;">${item.productName}</td>
         <td style="padding: 15px 0; text-align: center; color: #000; font-size: 14px;">${item.quantity}</td>
-        <td style="padding: 15px 0; text-align: right; color: #000; font-size: 14px;">$${item.unitPrice}</td>
-        <td style="padding: 15px 0; text-align: right; font-weight: 400; color: #000; font-size: 14px;">$${item.subtotal}</td>
+        <td style="padding: 15px 0; text-align: right; color: #000; font-size: 14px;">TND${item.unitPrice}</td>
+        <td style="padding: 15px 0; text-align: right; font-weight: 400; color: #000; font-size: 14px;">TND${item.subtotal}</td>
       </tr>
     `
     )

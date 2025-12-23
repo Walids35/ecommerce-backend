@@ -7,13 +7,13 @@ const service = new BrandService();
 
 export class BrandController {
   async getAll(req: Request, res: Response) {
-    const brands = await service.getAll();
+    const brands = await service.getAll(req.language);
     sendSuccess(res, brands, "Brands retrieved successfully");
   }
 
   async getById(req: Request, res: Response) {
     const id = Number(req.params.id);
-    const brand = await service.getById(id);
+    const brand = await service.getById(req.language, id);
     sendSuccess(res, brand, "Brand retrieved successfully");
   }
 

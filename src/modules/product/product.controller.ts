@@ -19,13 +19,13 @@ export class ProductController {
   }
 
   async findById(req: Request, res: Response) {
-    const product = await service.findById(req.params.id);
+    const product = await service.findById(req.language, req.params.id);
     sendSuccess(res, product, "Product retrieved successfully");
   }
 
   async update(req: Request, res: Response) {
     const parsed = UpdateProductInput.parse(req.body);
-    const updated = await service.update(req.params.id, parsed);
+    const updated = await service.update(req.language, req.params.id, parsed);
     sendSuccess(res, updated, "Product updated successfully");
   }
 
@@ -35,12 +35,12 @@ export class ProductController {
   }
 
   async findAll(req: Request, res: Response) {
-    const products = await service.findAll();
+    const products = await service.findAll(req.language);
     sendSuccess(res, products, "Products retrieved successfully");
   }
 
   async findAllWithSearch(req: Request, res: Response) {
-    const result = await service.findAllWithSearch({
+    const result = await service.findAllWithSearch(req.language, {
       search: req.query.search as string,
       subCategoryId: req.query.subCategoryId
         ? Number(req.query.subCategoryId)
@@ -89,7 +89,7 @@ export class ProductController {
 
   async filterProducts(req: Request, res: Response) {
     const parsed = FilterProductsInput.parse(req.body);
-    const result = await service.filterProducts(parsed);
+    const result = await service.filterProducts(req.language, parsed);
     sendPaginated(
       res,
       result.data,
@@ -103,11 +103,10 @@ export class ProductController {
   }
 
   async findDiscountedProducts(req: Request, res: Response) {
-    const result = await service.findDiscountedProducts({
+    const result = await service.findDiscountedProducts(req.language, {
       page: req.query.page ? Number(req.query.page) : 1,
       limit: req.query.limit ? Number(req.query.limit) : 10,
-      sort: req.query.sort as string,
-      sortBy: req.query.sortBy as string,
+      sortBy: req.query.sortBy as "discount" | "newest" | "price_asc" | "price_desc",
     });
 
     sendPaginated(
