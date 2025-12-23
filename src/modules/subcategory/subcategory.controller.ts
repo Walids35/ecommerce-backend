@@ -1,6 +1,9 @@
 import { Request, Response } from "express";
 import { SubCategoryService } from "./subcategory.service";
-import { CreateSubCategoryDto, UpdateSubCategoryDto } from "./dto/subcategory.dto";
+import {
+  CreateSubCategoryDto,
+  UpdateSubCategoryDto,
+} from "./dto/subcategory.dto";
 import { sendSuccess, sendCreated } from "../../utils/response";
 
 const service = new SubCategoryService();
@@ -44,5 +47,14 @@ export class SubCategoryController {
     const id = Number(req.params.id);
     const deleted = await service.delete(id);
     sendSuccess(res, deleted, "Subcategory deleted successfully");
+  }
+
+  async getAllWithSubSubCategories(req: Request, res: Response) {
+    const items = await service.getAllWithSubSubCategories();
+    sendSuccess(
+      res,
+      items,
+      "Subcategories with subsubcategories retrieved successfully"
+    );
   }
 }

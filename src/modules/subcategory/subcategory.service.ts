@@ -37,7 +37,7 @@ export class SubCategoryService {
         isActive: data.isActive ?? true,
         displayOrder: data.displayOrder ?? 0,
         categoryId: data.categoryId,
-        image: data.image
+        image: data.image,
       })
       .returning();
 
@@ -275,7 +275,8 @@ export class SubCategoryService {
     if (data.description !== undefined) payload.description = data.description;
     if (data.slug !== undefined) payload.slug = data.slug;
     if (data.isActive !== undefined) payload.isActive = data.isActive;
-    if (data.displayOrder !== undefined) payload.displayOrder = data.displayOrder;
+    if (data.displayOrder !== undefined)
+      payload.displayOrder = data.displayOrder;
     if (data.categoryId !== undefined) payload.categoryId = data.categoryId;
 
     const [updated] = await db
@@ -357,5 +358,19 @@ export class SubCategoryService {
       .returning();
 
     return deleted;
+  }
+
+  async getAllWithSubSubCategories() {
+    const subcats = await this.findAll();
+    const result = await Promise.all(
+      subcats.map(async (subcat) => {
+        const subsubcats = await db
+          .select()
+          .from(subSubCategories)
+          .where(eq(subSubCategories.subCategoryId, subcat.id));
+        return { ...subcat, subSubCategories: subsubcats };
+      })
+    );
+    return result;
   }
 }
