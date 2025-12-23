@@ -10,7 +10,7 @@ export const collections = pgTable("collections", {
   name: varchar("name", { length: 150 }).notNull().unique(),
   description: text("description"),
   slug: varchar("slug", { length: 200 }).notNull().unique(),
-  image: text("image"),
+  images: text("images").array(),
   isActive: boolean("is_active").default(true).notNull(),
   displayOrder: integer("display_order").default(0).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),

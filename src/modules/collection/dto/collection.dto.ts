@@ -11,7 +11,7 @@ export const CreateCollectionDto = z.object({
   name: z.string().min(1, "Name is required"),
   description: z.string().optional(),
   slug: z.string().min(1).regex(/^[a-z0-9-]+$/, "Slug must be lowercase alphanumeric with hyphens"),
-  image: z.string().optional(),
+  images: z.array(z.string()).optional(),
   isActive: z.boolean().default(true),
   displayOrder: z.number().int().default(0),
   // Optional translations for multiple languages
@@ -26,7 +26,7 @@ export const UpdateCollectionDto = z.object({
   name: z.string().min(1).optional(),
   description: z.string().optional(),
   slug: z.string().min(1).regex(/^[a-z0-9-]+$/).optional(),
-  image: z.string().optional(),
+  images: z.array(z.string()).optional(),
   isActive: z.boolean().optional(),
   displayOrder: z.number().int().optional(),
   // Optional translations for multiple languages

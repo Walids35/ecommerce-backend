@@ -40,7 +40,7 @@ export class CollectionService {
         name: data.name,
         description: data.description,
         slug: data.slug,
-        image: data.image,
+        images: data.images,
         isActive: data.isActive ?? true,
         displayOrder: data.displayOrder ?? 0,
       })
@@ -106,7 +106,7 @@ export class CollectionService {
         name: collectionTranslations.name,
         description: collectionTranslations.description,
         slug: collectionTranslations.slug,
-        image: collections.image,
+        images: collections.images,
         isActive: collections.isActive,
         displayOrder: collections.displayOrder,
         createdAt: collections.createdAt,
@@ -159,7 +159,7 @@ export class CollectionService {
         name: collectionTranslations.name,
         description: collectionTranslations.description,
         slug: collectionTranslations.slug,
-        image: collections.image,
+        images: collections.images,
         isActive: collections.isActive,
         displayOrder: collections.displayOrder,
         createdAt: collections.createdAt,
@@ -376,7 +376,7 @@ export class CollectionService {
     if (baseData.name !== undefined) basePayload.name = baseData.name;
     if (baseData.description !== undefined) basePayload.description = baseData.description;
     if (baseData.slug !== undefined) basePayload.slug = baseData.slug;
-    if (baseData.image !== undefined) basePayload.image = baseData.image;
+    if (baseData.images !== undefined) basePayload.images = baseData.images;
     if (baseData.isActive !== undefined) basePayload.isActive = baseData.isActive;
     if (baseData.displayOrder !== undefined) basePayload.displayOrder = baseData.displayOrder;
 
