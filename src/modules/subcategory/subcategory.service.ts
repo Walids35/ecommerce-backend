@@ -359,18 +359,4 @@ export class SubCategoryService {
 
     return deleted;
   }
-
-  async getAllWithSubSubCategories() {
-    const subcats = await this.findAll();
-    const result = await Promise.all(
-      subcats.map(async (subcat) => {
-        const subsubcats = await db
-          .select()
-          .from(subSubCategories)
-          .where(eq(subSubCategories.subCategoryId, subcat.id));
-        return { ...subcat, subSubCategories: subsubcats };
-      })
-    );
-    return result;
-  }
 }

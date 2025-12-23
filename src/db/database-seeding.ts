@@ -2290,7 +2290,7 @@ async function seedDatabase() {
       return (
         await db
           .insert(collections)
-          .values({ name, description, slug, image, isActive: true, displayOrder })
+          .values({ name, description, slug, isActive: true, displayOrder })
           .returning()
       )[0];
     }

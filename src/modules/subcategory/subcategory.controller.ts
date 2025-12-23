@@ -48,13 +48,4 @@ export class SubCategoryController {
     const deleted = await service.delete(id);
     sendSuccess(res, deleted, "Subcategory deleted successfully");
   }
-
-  async getAllWithSubSubCategories(req: Request, res: Response) {
-    const items = await service.getAllWithSubSubCategories();
-    sendSuccess(
-      res,
-      items,
-      "Subcategories with subsubcategories retrieved successfully"
-    );
-  }
 }
