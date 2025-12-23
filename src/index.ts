@@ -18,6 +18,7 @@ import brandRoutes from './modules/brand/brand.routes';
 import { seedDatabase } from './db/database-seeding';
 import cookieParser from 'cookie-parser';
 import { verifyJWT } from "./middlewares/auth";
+import { detectLanguage } from './middlewares/language';
 
 dotenv.config();
 
@@ -30,12 +31,15 @@ app.use(cors({
   credentials: true
 }));
 app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ 
-  limit: '50mb', 
+app.use(express.urlencoded({
+  limit: '50mb',
   extended: true,
-  parameterLimit: 50000 
+  parameterLimit: 50000
 }));
 app.use(cookieParser());
+
+// Language detection middleware (must be after body parsing, before routes)
+app.use(detectLanguage);
 
 // Routes
 app.use('/api/auth', authRoutes);

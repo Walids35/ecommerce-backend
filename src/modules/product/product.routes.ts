@@ -8,6 +8,7 @@ const controller = new ProductController();
 
 router.post("/", verifyJWT, asyncHandler(controller.create.bind(controller)));
 router.get("/", asyncHandler(controller.findAllWithSearch.bind(controller)));
+router.get("/discounted", asyncHandler(controller.findDiscountedProducts.bind(controller)));
 router.get("/:id", asyncHandler(controller.findById.bind(controller)));
 router.put("/:id", verifyJWT, asyncHandler(controller.update.bind(controller)));
 router.patch("/:id/toggle-active", verifyJWT, asyncHandler(controller.toggleActiveStatus.bind(controller)));

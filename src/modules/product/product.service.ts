@@ -13,6 +13,10 @@ import {
 import { subSubCategories } from "../../db/schema/subsubcategories";
 import { productAttributeValues, products } from "../../db/schema/product";
 import { brands } from "../../db/schema/brands";
+import { productTranslations } from "../../db/schema/translations/product-translations";
+import { attributeTranslations } from "../../db/schema/translations/attribute-translations";
+import { attributeValueTranslations } from "../../db/schema/translations/attribute-value-translations";
+import { SupportedLanguage } from "../../middlewares/language";
 import { NotFoundError, BadRequestError } from "../../utils/errors";
 
 export class ProductService {
@@ -91,6 +95,27 @@ export class ProductService {
         subsubcategoryOrder: data.subsubcategoryOrder ?? data.displayOrder ?? 0,
       })
       .returning();
+
+    // Insert translations if provided
+    if (data.translations) {
+      const translationRecords = [];
+
+      for (const [lang, trans] of Object.entries(data.translations)) {
+        if (trans) {
+          translationRecords.push({
+            productId: created.id,
+            language: lang,
+            name: trans.name,
+            description: trans.description,
+            datasheet: trans.datasheet,
+          });
+        }
+      }
+
+      if (translationRecords.length > 0) {
+        await db.insert(productTranslations).values(translationRecords);
+      }
+    }
 
     // Insert attribute values
     if (data.attributes?.length) {
@@ -177,7 +202,7 @@ export class ProductService {
   // ---------------------------
   // FIND ALL WITH SEARCH
   // ---------------------------
-  async findAllWithSearch(query: {
+  async findAllWithSearch(language: SupportedLanguage, query: {
     search?: string;
     subCategoryId?: number;
     subSubCategoryId?: number;
@@ -202,10 +227,11 @@ export class ProductService {
 
     let whereClause: any[] = [];
 
+    // Search in translation table
     if (search) {
       whereClause.push(
         or(
-          ilike(products.name, `%${search}%`),
+          ilike(productTranslations.name, `%${search}%`),
           sql`${products.id}::text ILIKE ${'%' + search + '%'}`
         )
       );
@@ -229,7 +255,7 @@ export class ProductService {
       const direction = sort === "asc" ? asc : desc;
       switch (sortBy) {
         case "name":
-          orderBy = direction(products.name);
+          orderBy = direction(productTranslations.name);
           break;
         case "price":
           orderBy = direction(products.price);
@@ -285,8 +311,35 @@ export class ProductService {
     }
 
     const baseQuery = db
-      .select()
+      .select({
+        // Base product fields (language-agnostic)
+        id: products.id,
+        price: products.price,
+        stock: products.stock,
+        discountPercentage: products.discountPercentage,
+        subCategoryId: products.subCategoryId,
+        subSubCategoryId: products.subSubCategoryId,
+        brandId: products.brandId,
+        images: products.images,
+        isActive: products.isActive,
+        displayOrder: products.displayOrder,
+        subcategoryOrder: products.subcategoryOrder,
+        subsubcategoryOrder: products.subsubcategoryOrder,
+        createdAt: products.createdAt,
+        updatedAt: products.updatedAt,
+        // Translated fields
+        name: productTranslations.name,
+        description: productTranslations.description,
+        datasheet: productTranslations.datasheet,
+      })
       .from(products)
+      .innerJoin(
+        productTranslations,
+        and(
+          eq(productTranslations.productId, products.id),
+          eq(productTranslations.language, language)
+        )
+      )
       .where(whereClause.length ? and(...whereClause) : undefined);
 
     // Apply ordering
@@ -298,7 +351,7 @@ export class ProductService {
       .limit(limit)
       .offset(offset);
 
-    // Fetch attribute values for all product IDs
+    // Fetch attribute values for all product IDs (with translations)
     const ids = rows.map((p) => p.id);
 
     let attributeRows: any[] = [];
@@ -307,9 +360,9 @@ export class ProductService {
         .select({
           productId: productAttributeValues.productId,
           attributeId: attributes.id,
-          attributeName: attributes.name,
+          attributeName: attributeTranslations.name,
           valueId: attributeValues.id,
-          value: attributeValues.value,
+          value: attributeValueTranslations.value,
         })
         .from(productAttributeValues)
         .innerJoin(
@@ -317,8 +370,22 @@ export class ProductService {
           eq(productAttributeValues.attributeId, attributes.id)
         )
         .innerJoin(
+          attributeTranslations,
+          and(
+            eq(attributeTranslations.attributeId, attributes.id),
+            eq(attributeTranslations.language, language)
+          )
+        )
+        .innerJoin(
           attributeValues,
           eq(productAttributeValues.attributeValueId, attributeValues.id)
+        )
+        .innerJoin(
+          attributeValueTranslations,
+          and(
+            eq(attributeValueTranslations.attributeValueId, attributeValues.id),
+            eq(attributeValueTranslations.language, language)
+          )
         )
         .where(inArray(productAttributeValues.productId, ids));
     }
@@ -342,6 +409,13 @@ export class ProductService {
     const [{ count }] = await db
       .select({ count: sql<number>`COUNT(*)` })
       .from(products)
+      .innerJoin(
+        productTranslations,
+        and(
+          eq(productTranslations.productId, products.id),
+          eq(productTranslations.language, language)
+        )
+      )
       .where(whereClause.length ? and(...whereClause) : undefined);
 
     return {
@@ -352,18 +426,75 @@ export class ProductService {
     };
   }
 
-  async findAll() {
-    const rows = await db.select().from(products).orderBy(asc(products.subcategoryOrder), desc(products.createdAt));
+  async findAll(language: SupportedLanguage) {
+    const rows = await db
+      .select({
+        // Base product fields
+        id: products.id,
+        price: products.price,
+        stock: products.stock,
+        discountPercentage: products.discountPercentage,
+        subCategoryId: products.subCategoryId,
+        subSubCategoryId: products.subSubCategoryId,
+        brandId: products.brandId,
+        images: products.images,
+        isActive: products.isActive,
+        displayOrder: products.displayOrder,
+        subcategoryOrder: products.subcategoryOrder,
+        subsubcategoryOrder: products.subsubcategoryOrder,
+        createdAt: products.createdAt,
+        updatedAt: products.updatedAt,
+        // Translated fields
+        name: productTranslations.name,
+        description: productTranslations.description,
+        datasheet: productTranslations.datasheet,
+      })
+      .from(products)
+      .innerJoin(
+        productTranslations,
+        and(
+          eq(productTranslations.productId, products.id),
+          eq(productTranslations.language, language)
+        )
+      )
+      .orderBy(asc(products.subcategoryOrder), desc(products.createdAt));
     return rows;
   }
 
   // ---------------------------
   // FIND BY ID
   // ---------------------------
-  async findById(id: string) {
+  async findById(language: SupportedLanguage, id: string) {
     const rows = await db
-      .select()
+      .select({
+        // Base product fields
+        id: products.id,
+        price: products.price,
+        stock: products.stock,
+        discountPercentage: products.discountPercentage,
+        subCategoryId: products.subCategoryId,
+        subSubCategoryId: products.subSubCategoryId,
+        brandId: products.brandId,
+        images: products.images,
+        isActive: products.isActive,
+        displayOrder: products.displayOrder,
+        subcategoryOrder: products.subcategoryOrder,
+        subsubcategoryOrder: products.subsubcategoryOrder,
+        createdAt: products.createdAt,
+        updatedAt: products.updatedAt,
+        // Translated fields
+        name: productTranslations.name,
+        description: productTranslations.description,
+        datasheet: productTranslations.datasheet,
+      })
       .from(products)
+      .innerJoin(
+        productTranslations,
+        and(
+          eq(productTranslations.productId, products.id),
+          eq(productTranslations.language, language)
+        )
+      )
       .where(eq(products.id, id))
       .limit(1);
 
@@ -374,9 +505,9 @@ export class ProductService {
     const attributeRows = await db
       .select({
         attributeId: attributes.id,
-        attributeName: attributes.name,
+        attributeName: attributeTranslations.name,
         valueId: attributeValues.id,
-        value: attributeValues.value,
+        value: attributeValueTranslations.value,
       })
       .from(productAttributeValues)
       .innerJoin(
@@ -384,10 +515,35 @@ export class ProductService {
         eq(productAttributeValues.attributeId, attributes.id)
       )
       .innerJoin(
+        attributeTranslations,
+        and(
+          eq(attributeTranslations.attributeId, attributes.id),
+          eq(attributeTranslations.language, language)
+        )
+      )
+      .innerJoin(
         attributeValues,
         eq(productAttributeValues.attributeValueId, attributeValues.id)
       )
+      .innerJoin(
+        attributeValueTranslations,
+        and(
+          eq(attributeValueTranslations.attributeValueId, attributeValues.id),
+          eq(attributeValueTranslations.language, language)
+        )
+      )
       .where(eq(productAttributeValues.productId, id));
+
+    // Fetch all translations for this product
+    const allTranslations = await db
+      .select({
+        language: productTranslations.language,
+        name: productTranslations.name,
+        description: productTranslations.description,
+        datasheet: productTranslations.datasheet,
+      })
+      .from(productTranslations)
+      .where(eq(productTranslations.productId, id));
 
     return {
       ...product,
@@ -397,14 +553,15 @@ export class ProductService {
         attributeValueId: row.valueId,
         value: row.value,
       })),
+      translations: allTranslations,
     };
   }
 
   // ---------------------------
   // UPDATE PRODUCT
   // ---------------------------
-  async update(id: string, data: UpdateProductInputType) {
-    const existing = await this.findById(id);
+  async update(language: SupportedLanguage, id: string, data: UpdateProductInputType) {
+    const existing = await this.findById(language, id);
 
     // Validate brand if being updated
     if (data.brandId !== undefined && data.brandId !== null) {
@@ -443,6 +600,51 @@ export class ProductService {
       .where(eq(products.id, id))
       .returning();
 
+    // Upsert translations if provided
+    if (data.translations) {
+      for (const [lang, trans] of Object.entries(data.translations)) {
+        if (trans) {
+          const existing = await db
+            .select()
+            .from(productTranslations)
+            .where(
+              and(
+                eq(productTranslations.productId, id),
+                eq(productTranslations.language, lang)
+              )
+            )
+            .limit(1);
+
+          if (existing.length > 0) {
+            // Update existing translation
+            await db
+              .update(productTranslations)
+              .set({
+                name: trans.name,
+                description: trans.description,
+                datasheet: trans.datasheet,
+                updatedAt: new Date(),
+              })
+              .where(
+                and(
+                  eq(productTranslations.productId, id),
+                  eq(productTranslations.language, lang)
+                )
+              );
+          } else {
+            // Insert new translation
+            await db.insert(productTranslations).values({
+              productId: id,
+              language: lang,
+              name: trans.name,
+              description: trans.description,
+              datasheet: trans.datasheet,
+            });
+          }
+        }
+      }
+    }
+
     // If attributes provided → replace all
     if (data.attributes) {
       await db
@@ -461,7 +663,7 @@ export class ProductService {
   }
 
   async toggleActiveStatus(id: string) {
-    const existing = await this.findById(id);
+    const existing = await this.findById('en', id);
 
     const [updated] = await db
       .update(products)
@@ -481,7 +683,7 @@ export class ProductService {
     displayOrder: number
   ) {
     // Fetch product to validate relationship
-    const existing = await this.findById(id);
+    const existing = await this.findById('en', id);
 
     // Validate scope matches product relationships
     if (scope === "subcategory" && !existing.subCategoryId) {
@@ -518,7 +720,7 @@ export class ProductService {
   // DELETE (Soft Delete)
   // ---------------------------
   async delete(id: string) {
-    await this.findById(id);
+    await this.findById('en', id);
 
     const [deleted] = await db
       .update(products)
@@ -533,9 +735,160 @@ export class ProductService {
   }
 
   // ---------------------------
+  // FIND DISCOUNTED PRODUCTS
+  // ---------------------------
+  async findDiscountedProducts(language: SupportedLanguage, query: {
+    page?: number;
+    limit?: number;
+    sortBy?: "discount" | "newest" | "price_asc" | "price_desc";
+  }) {
+    const {
+      page = 1,
+      limit = 10,
+      sortBy = "discount",
+    } = query;
+
+    const offset = (page - 1) * limit;
+
+    // Filter products with discountPercentage > 0 and isActive = true
+    const whereClause = and(
+      sql`CAST(${products.discountPercentage} AS DECIMAL) > 0`,
+      eq(products.isActive, true)
+    );
+
+    // Determine sorting
+    let orderBy;
+    switch (sortBy) {
+      case "discount":
+        orderBy = desc(products.discountPercentage);
+        break;
+      case "newest":
+        orderBy = desc(products.createdAt);
+        break;
+      case "price_asc":
+        orderBy = asc(products.price);
+        break;
+      case "price_desc":
+        orderBy = desc(products.price);
+        break;
+      default:
+        orderBy = desc(products.discountPercentage);
+    }
+
+    const rows = await db
+      .select({
+        // Base product fields
+        id: products.id,
+        price: products.price,
+        stock: products.stock,
+        discountPercentage: products.discountPercentage,
+        subCategoryId: products.subCategoryId,
+        subSubCategoryId: products.subSubCategoryId,
+        brandId: products.brandId,
+        images: products.images,
+        isActive: products.isActive,
+        displayOrder: products.displayOrder,
+        subcategoryOrder: products.subcategoryOrder,
+        subsubcategoryOrder: products.subsubcategoryOrder,
+        createdAt: products.createdAt,
+        updatedAt: products.updatedAt,
+        // Translated fields
+        name: productTranslations.name,
+        description: productTranslations.description,
+        datasheet: productTranslations.datasheet,
+      })
+      .from(products)
+      .innerJoin(
+        productTranslations,
+        and(
+          eq(productTranslations.productId, products.id),
+          eq(productTranslations.language, language)
+        )
+      )
+      .where(whereClause)
+      .orderBy(orderBy)
+      .limit(limit)
+      .offset(offset);
+
+    // Fetch attribute values for all product IDs (with translations)
+    const ids = rows.map((p) => p.id);
+
+    let attributeRows: any[] = [];
+    if (ids.length > 0) {
+      attributeRows = await db
+        .select({
+          productId: productAttributeValues.productId,
+          attributeId: attributes.id,
+          attributeName: attributeTranslations.name,
+          valueId: attributeValues.id,
+          value: attributeValueTranslations.value,
+        })
+        .from(productAttributeValues)
+        .innerJoin(
+          attributes,
+          eq(productAttributeValues.attributeId, attributes.id)
+        )
+        .innerJoin(
+          attributeTranslations,
+          and(
+            eq(attributeTranslations.attributeId, attributes.id),
+            eq(attributeTranslations.language, language)
+          )
+        )
+        .innerJoin(
+          attributeValues,
+          eq(productAttributeValues.attributeValueId, attributeValues.id)
+        )
+        .innerJoin(
+          attributeValueTranslations,
+          and(
+            eq(attributeValueTranslations.attributeValueId, attributeValues.id),
+            eq(attributeValueTranslations.language, language)
+          )
+        )
+        .where(inArray(productAttributeValues.productId, ids));
+    }
+
+    const groupedAttributes = attributeRows.reduce((acc, row) => {
+      if (!acc[row.productId]) acc[row.productId] = [];
+      acc[row.productId].push({
+        attributeId: row.attributeId,
+        attributeName: row.attributeName,
+        valueId: row.valueId,
+        value: row.value,
+      });
+      return acc;
+    }, {} as Record<string, any[]>);
+
+    const final = rows.map((p) => ({
+      ...p,
+      attributes: groupedAttributes[p.id] ?? [],
+    }));
+
+    const [{ count }] = await db
+      .select({ count: sql<number>`COUNT(*)` })
+      .from(products)
+      .innerJoin(
+        productTranslations,
+        and(
+          eq(productTranslations.productId, products.id),
+          eq(productTranslations.language, language)
+        )
+      )
+      .where(whereClause);
+
+    return {
+      page,
+      limit,
+      total: Number(count),
+      data: final,
+    };
+  }
+
+  // ---------------------------
   // FILTER PRODUCTS
   // ---------------------------
-  async filterProducts(input: FilterProductsInputType) {
+  async filterProducts(language: SupportedLanguage, input: FilterProductsInputType) {
     const {
       categoryId,
       categoryType,
@@ -601,8 +954,35 @@ export class ProductService {
       : [asc(products.subcategoryOrder), desc(products.createdAt)];
 
     const rows = await db
-      .select()
+      .select({
+        // Base product fields
+        id: products.id,
+        price: products.price,
+        stock: products.stock,
+        discountPercentage: products.discountPercentage,
+        subCategoryId: products.subCategoryId,
+        subSubCategoryId: products.subSubCategoryId,
+        brandId: products.brandId,
+        images: products.images,
+        isActive: products.isActive,
+        displayOrder: products.displayOrder,
+        subcategoryOrder: products.subcategoryOrder,
+        subsubcategoryOrder: products.subsubcategoryOrder,
+        createdAt: products.createdAt,
+        updatedAt: products.updatedAt,
+        // Translated fields
+        name: productTranslations.name,
+        description: productTranslations.description,
+        datasheet: productTranslations.datasheet,
+      })
       .from(products)
+      .innerJoin(
+        productTranslations,
+        and(
+          eq(productTranslations.productId, products.id),
+          eq(productTranslations.language, language)
+        )
+      )
       .where(finalWhere)
       .orderBy(...orderByClause)
       .limit(limit)
@@ -615,9 +995,9 @@ export class ProductService {
         .select({
           productId: productAttributeValues.productId,
           attributeId: attributes.id,
-          attributeName: attributes.name,
+          attributeName: attributeTranslations.name,
           valueId: attributeValues.id,
-          value: attributeValues.value,
+          value: attributeValueTranslations.value,
         })
         .from(productAttributeValues)
         .innerJoin(
@@ -625,8 +1005,22 @@ export class ProductService {
           eq(productAttributeValues.attributeId, attributes.id)
         )
         .innerJoin(
+          attributeTranslations,
+          and(
+            eq(attributeTranslations.attributeId, attributes.id),
+            eq(attributeTranslations.language, language)
+          )
+        )
+        .innerJoin(
           attributeValues,
           eq(productAttributeValues.attributeValueId, attributeValues.id)
+        )
+        .innerJoin(
+          attributeValueTranslations,
+          and(
+            eq(attributeValueTranslations.attributeValueId, attributeValues.id),
+            eq(attributeValueTranslations.language, language)
+          )
         )
         .where(inArray(productAttributeValues.productId, ids));
     }

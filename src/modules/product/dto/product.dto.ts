@@ -1,5 +1,12 @@
 import { z } from "zod";
 
+// Translation schema for product (name, description, datasheet)
+const ProductTranslationSchema = z.object({
+  name: z.string().min(1),
+  description: z.string().optional(),
+  datasheet: z.string().optional(),
+});
+
 export const CreateProductInput = z.object({
   name: z.string().min(1),
   description: z.string().optional(),
@@ -28,6 +35,13 @@ export const CreateProductInput = z.object({
       })
     )
     .optional(),
+
+  // Optional translations for multiple languages
+  translations: z.object({
+    en: ProductTranslationSchema.optional(),
+    fr: ProductTranslationSchema.optional(),
+    ar: ProductTranslationSchema.optional(),
+  }).optional(),
 }).refine(
   (data) => {
     // At least one category must be provided
@@ -58,6 +72,13 @@ export const UpdateProductInput = z.object({
       })
     )
     .optional(),
+
+  // Optional translations for multiple languages
+  translations: z.object({
+    en: ProductTranslationSchema.optional(),
+    fr: ProductTranslationSchema.optional(),
+    ar: ProductTranslationSchema.optional(),
+  }).optional(),
 });
 
 export const updateProductDisplayOrderInput = z.object({

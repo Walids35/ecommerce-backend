@@ -1,10 +1,13 @@
-import { eq, sql } from "drizzle-orm";
+import { eq, sql, and, inArray } from "drizzle-orm";
 import { CreateSubCategoryInput, UpdateSubCategoryInput } from "./dto/subcategory.dto";
 import { categories } from "../../db/schema/categories";
 import { db } from "../../db/data-source";
 import { subCategories } from "../../db/schema/subcategories";
 import { subSubCategories } from "../../db/schema/subsubcategories";
 import { products } from "../../db/schema/product";
+import { subcategoryTranslations } from "../../db/schema/translations/subcategory-translations";
+import { subsubcategoryTranslations } from "../../db/schema/translations/subsubcategory-translations";
+import { SupportedLanguage } from "../../middlewares/language";
 
 export class SubCategoryService {
   async create(data: CreateSubCategoryInput) {
@@ -38,22 +41,180 @@ export class SubCategoryService {
       })
       .returning();
 
+    // Insert translations if provided
+    if (data.translations) {
+      const translationRecords = [];
+
+      for (const [lang, trans] of Object.entries(data.translations)) {
+        if (trans) {
+          translationRecords.push({
+            subcategoryId: created.id,
+            language: lang,
+            name: trans.name,
+            description: trans.description,
+          });
+        }
+      }
+
+      if (translationRecords.length > 0) {
+        await db.insert(subcategoryTranslations).values(translationRecords);
+      }
+    }
+
     return created;
   }
 
-  async findAll() {
-    return await db.select().from(subCategories);
-  }
-  async findByCategoryId(categoryId: number) {
+  async findAll(language: SupportedLanguage) {
     return await db
-      .select()
+      .select({
+        id: subCategories.id,
+        categoryId: subCategories.categoryId,
+        slug: subCategories.slug,
+        image: subCategories.image,
+        isActive: subCategories.isActive,
+        displayOrder: subCategories.displayOrder,
+        createdAt: subCategories.createdAt,
+        updatedAt: subCategories.updatedAt,
+        name: subcategoryTranslations.name,
+        description: subcategoryTranslations.description,
+      })
       .from(subCategories)
+      .innerJoin(
+        subcategoryTranslations,
+        and(
+          eq(subcategoryTranslations.subcategoryId, subCategories.id),
+          eq(subcategoryTranslations.language, language)
+        )
+      );
+  }
+
+  async getAllWithSubSubCategories(language: SupportedLanguage) {
+    // Fetch all subcategories with translations
+    const subcategoriesList = await db
+      .select({
+        id: subCategories.id,
+        categoryId: subCategories.categoryId,
+        slug: subCategories.slug,
+        image: subCategories.image,
+        isActive: subCategories.isActive,
+        displayOrder: subCategories.displayOrder,
+        createdAt: subCategories.createdAt,
+        updatedAt: subCategories.updatedAt,
+        name: subcategoryTranslations.name,
+        description: subcategoryTranslations.description,
+      })
+      .from(subCategories)
+      .innerJoin(
+        subcategoryTranslations,
+        and(
+          eq(subcategoryTranslations.subcategoryId, subCategories.id),
+          eq(subcategoryTranslations.language, language)
+        )
+      );
+
+    if (subcategoriesList.length === 0) {
+      return [];
+    }
+
+    // Get all subcategory IDs
+    const subcategoryIds = subcategoriesList.map(sc => sc.id);
+
+    // Fetch all subsubcategories for these subcategories
+    const subsubcategoriesList = await db
+      .select({
+        id: subSubCategories.id,
+        subCategoryId: subSubCategories.subCategoryId,
+        slug: subSubCategories.slug,
+        image: subSubCategories.image,
+        isActive: subSubCategories.isActive,
+        displayOrder: subSubCategories.displayOrder,
+        createdAt: subSubCategories.createdAt,
+        updatedAt: subSubCategories.updatedAt,
+        name: subsubcategoryTranslations.name,
+        description: subsubcategoryTranslations.description,
+      })
+      .from(subSubCategories)
+      .innerJoin(
+        subsubcategoryTranslations,
+        and(
+          eq(subsubcategoryTranslations.subsubcategoryId, subSubCategories.id),
+          eq(subsubcategoryTranslations.language, language)
+        )
+      )
+      .where(inArray(subSubCategories.subCategoryId, subcategoryIds));
+
+    // Group subsubcategories by subcategory ID
+    const subsubcategoriesMap = subsubcategoriesList.reduce((acc, subsubcat) => {
+      if (!acc[subsubcat.subCategoryId]) {
+        acc[subsubcat.subCategoryId] = [];
+      }
+      acc[subsubcat.subCategoryId].push({
+        id: subsubcat.id,
+        slug: subsubcat.slug,
+        image: subsubcat.image,
+        isActive: subsubcat.isActive,
+        displayOrder: subsubcat.displayOrder,
+        createdAt: subsubcat.createdAt,
+        updatedAt: subsubcat.updatedAt,
+        name: subsubcat.name,
+        description: subsubcat.description,
+      });
+      return acc;
+    }, {} as Record<number, any[]>);
+
+    // Combine subcategories with their subsubcategories
+    return subcategoriesList.map(subcategory => ({
+      ...subcategory,
+      subsubcategories: subsubcategoriesMap[subcategory.id] || [],
+    }));
+  }
+
+  async findByCategoryId(language: SupportedLanguage, categoryId: number) {
+    return await db
+      .select({
+        id: subCategories.id,
+        categoryId: subCategories.categoryId,
+        slug: subCategories.slug,
+        image: subCategories.image,
+        isActive: subCategories.isActive,
+        displayOrder: subCategories.displayOrder,
+        createdAt: subCategories.createdAt,
+        updatedAt: subCategories.updatedAt,
+        name: subcategoryTranslations.name,
+        description: subcategoryTranslations.description,
+      })
+      .from(subCategories)
+      .innerJoin(
+        subcategoryTranslations,
+        and(
+          eq(subcategoryTranslations.subcategoryId, subCategories.id),
+          eq(subcategoryTranslations.language, language)
+        )
+      )
       .where(eq(subCategories.categoryId, categoryId));
   }
-  async findById(id: number) {
+  async findById(language: SupportedLanguage, id: number) {
     const result = await db
-      .select()
+      .select({
+        id: subCategories.id,
+        categoryId: subCategories.categoryId,
+        slug: subCategories.slug,
+        image: subCategories.image,
+        isActive: subCategories.isActive,
+        displayOrder: subCategories.displayOrder,
+        createdAt: subCategories.createdAt,
+        updatedAt: subCategories.updatedAt,
+        name: subcategoryTranslations.name,
+        description: subcategoryTranslations.description,
+      })
       .from(subCategories)
+      .innerJoin(
+        subcategoryTranslations,
+        and(
+          eq(subcategoryTranslations.subcategoryId, subCategories.id),
+          eq(subcategoryTranslations.language, language)
+        )
+      )
       .where(eq(subCategories.id, id))
       .limit(1);
 
@@ -61,10 +222,28 @@ export class SubCategoryService {
     return result[0];
   }
 
-  async findBySlug(slug: string) {
+  async findBySlug(language: SupportedLanguage, slug: string) {
     const result = await db
-      .select()
+      .select({
+        id: subCategories.id,
+        categoryId: subCategories.categoryId,
+        slug: subCategories.slug,
+        image: subCategories.image,
+        isActive: subCategories.isActive,
+        displayOrder: subCategories.displayOrder,
+        createdAt: subCategories.createdAt,
+        updatedAt: subCategories.updatedAt,
+        name: subcategoryTranslations.name,
+        description: subcategoryTranslations.description,
+      })
       .from(subCategories)
+      .innerJoin(
+        subcategoryTranslations,
+        and(
+          eq(subcategoryTranslations.subcategoryId, subCategories.id),
+          eq(subcategoryTranslations.language, language)
+        )
+      )
       .where(eq(subCategories.slug, slug))
       .limit(1);
 
@@ -73,7 +252,7 @@ export class SubCategoryService {
   }
 
   async update(id: number, data: UpdateSubCategoryInput) {
-    await this.findById(id);
+    await this.findById("en", id);
 
     // Check slug uniqueness if being updated
     if (data.slug) {
@@ -105,11 +284,52 @@ export class SubCategoryService {
       .where(eq(subCategories.id, id))
       .returning();
 
+    // Upsert translations if provided
+    if (data.translations) {
+      for (const [lang, trans] of Object.entries(data.translations)) {
+        if (trans) {
+          const existing = await db
+            .select()
+            .from(subcategoryTranslations)
+            .where(
+              and(
+                eq(subcategoryTranslations.subcategoryId, id),
+                eq(subcategoryTranslations.language, lang)
+              )
+            )
+            .limit(1);
+
+          if (existing.length > 0) {
+            await db
+              .update(subcategoryTranslations)
+              .set({
+                name: trans.name,
+                description: trans.description,
+                updatedAt: new Date(),
+              })
+              .where(
+                and(
+                  eq(subcategoryTranslations.subcategoryId, id),
+                  eq(subcategoryTranslations.language, lang)
+                )
+              );
+          } else {
+            await db.insert(subcategoryTranslations).values({
+              subcategoryId: id,
+              language: lang,
+              name: trans.name,
+              description: trans.description,
+            });
+          }
+        }
+      }
+    }
+
     return updated;
   }
 
   async delete(id: number) {
-    await this.findById(id);
+    await this.findById("en", id);
 
     // Check if any subsubcategories exist
     const subsubcats = await db

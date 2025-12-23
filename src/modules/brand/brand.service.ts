@@ -1,22 +1,58 @@
-import { eq, asc, sql } from "drizzle-orm";
+import { eq, asc, sql, and } from "drizzle-orm";
 import { db } from "../../db/data-source";
 import { brands } from "../../db/schema/brands";
 import { products } from "../../db/schema/product";
+import { brandTranslations } from "../../db/schema/translations/brand-translations";
 import { NotFoundError, ConflictError, BadRequestError } from "../../utils/errors";
 import { CreateBrandDto, UpdateBrandDto } from "./dto/brand.dto";
+import { SupportedLanguage } from "../../middlewares/language";
 
 export class BrandService {
-  async getAll() {
+  async getAll(language: SupportedLanguage) {
     return db
-      .select()
+      .select({
+        id: brands.id,
+        logo: brands.logo,
+        isActive: brands.isActive,
+        displayOrder: brands.displayOrder,
+        createdAt: brands.createdAt,
+        updatedAt: brands.updatedAt,
+        name: brandTranslations.name,
+        description: brandTranslations.description,
+        slug: brandTranslations.slug,
+      })
       .from(brands)
-      .orderBy(asc(brands.displayOrder), asc(brands.name));
+      .innerJoin(
+        brandTranslations,
+        and(
+          eq(brandTranslations.brandId, brands.id),
+          eq(brandTranslations.language, language)
+        )
+      )
+      .orderBy(asc(brands.displayOrder), asc(brandTranslations.name));
   }
 
-  async getById(id: number) {
+  async getById(language: SupportedLanguage, id: number) {
     const result = await db
-      .select()
+      .select({
+        id: brands.id,
+        logo: brands.logo,
+        isActive: brands.isActive,
+        displayOrder: brands.displayOrder,
+        createdAt: brands.createdAt,
+        updatedAt: brands.updatedAt,
+        name: brandTranslations.name,
+        description: brandTranslations.description,
+        slug: brandTranslations.slug,
+      })
       .from(brands)
+      .innerJoin(
+        brandTranslations,
+        and(
+          eq(brandTranslations.brandId, brands.id),
+          eq(brandTranslations.language, language)
+        )
+      )
       .where(eq(brands.id, id))
       .limit(1);
 
@@ -50,7 +86,7 @@ export class BrandService {
       throw new ConflictError("Slug already exists");
     }
 
-    const result = await db
+    const [created] = await db
       .insert(brands)
       .values({
         name: data.name,
@@ -62,11 +98,32 @@ export class BrandService {
       })
       .returning();
 
-    return result[0];
+    // Insert translations if provided
+    if (data.translations) {
+      const translationRecords = [];
+
+      for (const [lang, trans] of Object.entries(data.translations)) {
+        if (trans) {
+          translationRecords.push({
+            brandId: created.id,
+            language: lang,
+            name: trans.name,
+            description: trans.description,
+            slug: trans.slug,
+          });
+        }
+      }
+
+      if (translationRecords.length > 0) {
+        await db.insert(brandTranslations).values(translationRecords);
+      }
+    }
+
+    return created;
   }
 
   async update(id: number, data: UpdateBrandDto) {
-    const existing = await this.getById(id);
+    const existing = await this.getById('en', id);
 
     // Check name uniqueness if being updated
     if (data.name && data.name !== existing.name) {
@@ -105,17 +162,60 @@ export class BrandService {
     if (data.isActive !== undefined) payload.isActive = data.isActive;
     if (data.displayOrder !== undefined) payload.displayOrder = data.displayOrder;
 
-    const result = await db
+    const [updated] = await db
       .update(brands)
       .set(payload)
       .where(eq(brands.id, id))
       .returning();
 
-    return result[0];
+    // Upsert translations if provided
+    if (data.translations) {
+      for (const [lang, trans] of Object.entries(data.translations)) {
+        if (trans) {
+          const existing = await db
+            .select()
+            .from(brandTranslations)
+            .where(
+              and(
+                eq(brandTranslations.brandId, id),
+                eq(brandTranslations.language, lang)
+              )
+            )
+            .limit(1);
+
+          if (existing.length > 0) {
+            await db
+              .update(brandTranslations)
+              .set({
+                name: trans.name,
+                description: trans.description,
+                slug: trans.slug,
+                updatedAt: new Date(),
+              })
+              .where(
+                and(
+                  eq(brandTranslations.brandId, id),
+                  eq(brandTranslations.language, lang)
+                )
+              );
+          } else {
+            await db.insert(brandTranslations).values({
+              brandId: id,
+              language: lang,
+              name: trans.name,
+              description: trans.description,
+              slug: trans.slug,
+            });
+          }
+        }
+      }
+    }
+
+    return updated;
   }
 
   async delete(id: number) {
-    await this.getById(id); // Validates brand exists
+    await this.getById('en', id); // Validates brand exists
 
     // Check if brand has products
     const productCount = await db

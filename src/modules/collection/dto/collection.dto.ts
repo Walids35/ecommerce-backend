@@ -1,6 +1,12 @@
 import { z } from "zod";
 
-// Create Collection DTO
+// Translation schema for a single language
+const CollectionTranslationSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  description: z.string().optional(),
+  slug: z.string().min(1).regex(/^[a-z0-9-]+$/, "Slug must be lowercase alphanumeric with hyphens"),
+});
+
 export const CreateCollectionDto = z.object({
   name: z.string().min(1, "Name is required"),
   description: z.string().optional(),
@@ -8,25 +14,47 @@ export const CreateCollectionDto = z.object({
   image: z.string().optional(),
   isActive: z.boolean().default(true),
   displayOrder: z.number().int().default(0),
+  // Optional translations for multiple languages
+  translations: z.object({
+    en: CollectionTranslationSchema.optional(),
+    fr: CollectionTranslationSchema.optional(),
+    ar: CollectionTranslationSchema.optional(),
+  }).optional(),
 });
 
-export type CreateCollectionInput = z.infer<typeof CreateCollectionDto>;
+export const UpdateCollectionDto = z.object({
+  name: z.string().min(1).optional(),
+  description: z.string().optional(),
+  slug: z.string().min(1).regex(/^[a-z0-9-]+$/).optional(),
+  image: z.string().optional(),
+  isActive: z.boolean().optional(),
+  displayOrder: z.number().int().optional(),
+  // Optional translations for multiple languages
+  translations: z.object({
+    en: CollectionTranslationSchema.optional(),
+    fr: CollectionTranslationSchema.optional(),
+    ar: CollectionTranslationSchema.optional(),
+  }).optional(),
+});
 
-// Update Collection DTO
-export const UpdateCollectionDto = CreateCollectionDto.partial();
-
-export type UpdateCollectionInput = z.infer<typeof UpdateCollectionDto>;
-
-// Add Products to Collection DTO
+// DTO for adding products to a collection
 export const AddProductsToCollectionDto = z.object({
-  productIds: z.array(z.string().uuid("Invalid product ID format")).min(1, "At least one product ID is required"),
+  productIds: z.array(z.string().uuid()).min(1, "At least one product ID is required"),
 });
 
-export type AddProductsToCollectionInput = z.infer<typeof AddProductsToCollectionDto>;
-
-// Remove Products from Collection DTO
+// DTO for removing products from a collection
 export const RemoveProductsFromCollectionDto = z.object({
-  productIds: z.array(z.string().uuid("Invalid product ID format")).min(1, "At least one product ID is required"),
+  productIds: z.array(z.string().uuid()).min(1, "At least one product ID is required"),
 });
 
-export type RemoveProductsFromCollectionInput = z.infer<typeof RemoveProductsFromCollectionDto>;
+// Type exports with both naming conventions for backward compatibility
+export type CreateCollectionDto = z.infer<typeof CreateCollectionDto>;
+export type UpdateCollectionDto = z.infer<typeof UpdateCollectionDto>;
+export type AddProductsToCollectionDto = z.infer<typeof AddProductsToCollectionDto>;
+export type RemoveProductsFromCollectionDto = z.infer<typeof RemoveProductsFromCollectionDto>;
+
+// Alias exports for service compatibility
+export type CreateCollectionInput = CreateCollectionDto;
+export type UpdateCollectionInput = UpdateCollectionDto;
+export type AddProductsToCollectionInput = AddProductsToCollectionDto;
+export type RemoveProductsFromCollectionInput = RemoveProductsFromCollectionDto;

@@ -20,7 +20,7 @@ export class CollectionController {
 
   // Get all collections
   async getAllCollections(req: Request, res: Response) {
-    const result = await service.findAll({
+    const result = await service.findAll(req.language, {
       page: req.query.page ? Number(req.query.page) : 1,
       limit: req.query.limit ? Number(req.query.limit) : 20,
       isActive: req.query.isActive ? req.query.isActive === "true" : undefined,
@@ -42,14 +42,14 @@ export class CollectionController {
   // Get collection by ID
   async getCollectionById(req: Request, res: Response) {
     const id = Number(req.params.id);
-    const collection = await service.findById(id);
+    const collection = await service.findById(req.language, id);
     sendSuccess(res, collection, "Collection retrieved successfully");
   }
 
   // Get collection with its products
   async getCollectionWithProducts(req: Request, res: Response) {
     const id = Number(req.params.id);
-    const result = await service.findByIdWithProducts(id, {
+    const result = await service.findByIdWithProducts(req.language, id, {
       page: req.query.page ? Number(req.query.page) : 1,
       limit: req.query.limit ? Number(req.query.limit) : 20,
       sortBy: req.query.sortBy as "name" | "price" | "addedAt" | "displayOrder",
@@ -93,7 +93,7 @@ export class CollectionController {
   // Get products by collection with filters
   async getProductsByCollection(req: Request, res: Response) {
     const id = Number(req.params.id);
-    const result = await service.getProductsByCollection(id, {
+    const result = await service.getProductsByCollection(req.language, id, {
       page: req.query.page ? Number(req.query.page) : 1,
       limit: req.query.limit ? Number(req.query.limit) : 20,
       minPrice: req.query.minPrice as string,
