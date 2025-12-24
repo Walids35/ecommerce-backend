@@ -18,19 +18,32 @@ export class CategoryService {
         displayOrder: categories.displayOrder,
         createdAt: categories.createdAt,
         updatedAt: categories.updatedAt,
-        name: categoryTranslations.name,
-        description: categoryTranslations.description,
-        slug: categoryTranslations.slug,
+        name: sql<string>`COALESCE(
+          ct_requested.name,
+          ct_fallback.name,
+          ${categories.name}
+        )`,
+        description: sql<string>`COALESCE(
+          ct_requested.description,
+          ct_fallback.description,
+          ${categories.description}
+        )`,
+        slug: sql<string>`COALESCE(
+          ct_requested.slug,
+          ct_fallback.slug,
+          ${categories.slug}
+        )`,
       })
       .from(categories)
-      .innerJoin(
-        categoryTranslations,
-        and(
-          eq(categoryTranslations.categoryId, categories.id),
-          eq(categoryTranslations.language, language)
-        )
+      .leftJoin(
+        sql`category_translations as ct_requested`,
+        sql`ct_requested.category_id = ${categories.id} AND ct_requested.language = ${language}`
       )
-      .orderBy(categories.displayOrder, categoryTranslations.name);
+      .leftJoin(
+        sql`category_translations as ct_fallback`,
+        sql`ct_fallback.category_id = ${categories.id} AND ct_fallback.language = 'en'`
+      )
+      .orderBy(categories.displayOrder);
   }
 async getAllCategoriesWithSubcategories(language: SupportedLanguage) {
     const allCategories = await db

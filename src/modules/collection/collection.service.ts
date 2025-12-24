@@ -88,24 +88,37 @@ export class CollectionService {
     if (filters?.isActive !== undefined) {
       conditions.push(eq(collections.isActive, filters.isActive));
     }
-    if (filters?.search) {
-      conditions.push(
-        or(
-          ilike(collectionTranslations.name, `%${filters.search}%`),
-          ilike(collectionTranslations.description, `%${filters.search}%`)
-        )
-      );
-    }
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
-    // Get collections with product count
+    // Build search filter for HAVING clause
+    const searchFilter = filters?.search;
+    const havingClause = searchFilter
+      ? sql`(
+          LOWER(COALESCE(MAX(ct_requested.name), MAX(ct_fallback.name), ${collections.name})) LIKE LOWER(${`%${searchFilter}%`})
+          OR LOWER(COALESCE(MAX(ct_requested.description), MAX(ct_fallback.description), ${collections.description})) LIKE LOWER(${`%${searchFilter}%`})
+        )`
+      : undefined;
+
+    // Build the complete query with HAVING clause included upfront
     const results = await db
       .select({
         id: collections.id,
-        name: collectionTranslations.name,
-        description: collectionTranslations.description,
-        slug: collectionTranslations.slug,
+        name: sql<string>`COALESCE(
+          MAX(ct_requested.name),
+          MAX(ct_fallback.name),
+          ${collections.name}
+        )`,
+        description: sql<string>`COALESCE(
+          MAX(ct_requested.description),
+          MAX(ct_fallback.description),
+          ${collections.description}
+        )`,
+        slug: sql<string>`COALESCE(
+          MAX(ct_requested.slug),
+          MAX(ct_fallback.slug),
+          ${collections.slug}
+        )`,
         images: collections.images,
         isActive: collections.isActive,
         displayOrder: collections.displayOrder,
@@ -114,31 +127,26 @@ export class CollectionService {
         productCount: sql<number>`CAST(COUNT(${productCollections.id}) AS INTEGER)`,
       })
       .from(collections)
-      .innerJoin(
-        collectionTranslations,
-        and(
-          eq(collectionTranslations.collectionId, collections.id),
-          eq(collectionTranslations.language, language)
-        )
+      .leftJoin(
+        sql`collection_translations as ct_requested`,
+        sql`ct_requested.collection_id = ${collections.id} AND ct_requested.language = ${language}`
+      )
+      .leftJoin(
+        sql`collection_translations as ct_fallback`,
+        sql`ct_fallback.collection_id = ${collections.id} AND ct_fallback.language = 'en'`
       )
       .leftJoin(productCollections, eq(collections.id, productCollections.collectionId))
       .where(whereClause)
-      .groupBy(collections.id, collectionTranslations.id)
-      .orderBy(asc(collections.displayOrder), asc(collectionTranslations.name))
+      .groupBy(collections.id, collections.name, collections.description, collections.slug, collections.images, collections.isActive, collections.displayOrder, collections.createdAt, collections.updatedAt)
+      .having(havingClause)
+      .orderBy(asc(collections.displayOrder))
       .limit(limit)
       .offset(offset);
 
-    // Get total count
+    // Get total count - no need for joins as we're counting base collections
     const [totalResult] = await db
       .select({ count: count() })
       .from(collections)
-      .innerJoin(
-        collectionTranslations,
-        and(
-          eq(collectionTranslations.collectionId, collections.id),
-          eq(collectionTranslations.language, language)
-        )
-      )
       .where(whereClause);
 
     return {
@@ -156,9 +164,21 @@ export class CollectionService {
     const [result] = await db
       .select({
         id: collections.id,
-        name: collectionTranslations.name,
-        description: collectionTranslations.description,
-        slug: collectionTranslations.slug,
+        name: sql<string>`COALESCE(
+          MAX(ct_requested.name),
+          MAX(ct_fallback.name),
+          ${collections.name}
+        )`,
+        description: sql<string>`COALESCE(
+          MAX(ct_requested.description),
+          MAX(ct_fallback.description),
+          ${collections.description}
+        )`,
+        slug: sql<string>`COALESCE(
+          MAX(ct_requested.slug),
+          MAX(ct_fallback.slug),
+          ${collections.slug}
+        )`,
         images: collections.images,
         isActive: collections.isActive,
         displayOrder: collections.displayOrder,
@@ -167,16 +187,17 @@ export class CollectionService {
         productCount: sql<number>`CAST(COUNT(${productCollections.id}) AS INTEGER)`,
       })
       .from(collections)
-      .innerJoin(
-        collectionTranslations,
-        and(
-          eq(collectionTranslations.collectionId, collections.id),
-          eq(collectionTranslations.language, language)
-        )
+      .leftJoin(
+        sql`collection_translations as ct_requested`,
+        sql`ct_requested.collection_id = ${collections.id} AND ct_requested.language = ${language}`
+      )
+      .leftJoin(
+        sql`collection_translations as ct_fallback`,
+        sql`ct_fallback.collection_id = ${collections.id} AND ct_fallback.language = 'en'`
       )
       .leftJoin(productCollections, eq(collections.id, productCollections.collectionId))
       .where(eq(collections.id, id))
-      .groupBy(collections.id, collectionTranslations.id);
+      .groupBy(collections.id, collections.name, collections.description, collections.slug, collections.images, collections.isActive, collections.displayOrder, collections.createdAt, collections.updatedAt);
 
     if (!result) {
       throw new NotFoundError("Collection not found");

@@ -15,7 +15,8 @@
       "WebSearch",
       "Bash(npx ts-node:*)",
       "Bash(psql:*)",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "Bash(npx tsc:*)"
     ],
     "deny": [],
     "ask": []

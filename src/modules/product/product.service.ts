@@ -232,13 +232,13 @@ export class ProductService {
 
     let whereClause: any[] = [];
 
-    // Search in translation table
+    // Build where conditions including search
     if (search) {
       whereClause.push(
-        or(
-          ilike(productTranslations.name, `%${search}%`),
-          sql`${products.id}::text ILIKE ${'%' + search + '%'}`
-        )
+        sql`(
+          LOWER(COALESCE(pt_requested.name, pt_fallback.name, ${products.name})) LIKE LOWER(${`%${search}%`})
+          OR ${products.id}::text LIKE ${`%${search}%`}
+        )`
       );
     }
 
@@ -341,18 +341,31 @@ export class ProductService {
         subsubcategoryOrder: products.subsubcategoryOrder,
         createdAt: products.createdAt,
         updatedAt: products.updatedAt,
-        // Translated fields
-        name: productTranslations.name,
-        description: productTranslations.description,
-        datasheet: productTranslations.datasheet,
+        // Translated fields with fallback
+        name: sql<string>`COALESCE(
+          pt_requested.name,
+          pt_fallback.name,
+          ${products.name}
+        )`,
+        description: sql<string>`COALESCE(
+          pt_requested.description,
+          pt_fallback.description,
+          ${products.description}
+        )`,
+        datasheet: sql<string>`COALESCE(
+          pt_requested.datasheet,
+          pt_fallback.datasheet,
+          ${products.datasheet}
+        )`,
       })
       .from(products)
-      .innerJoin(
-        productTranslations,
-        and(
-          eq(productTranslations.productId, products.id),
-          eq(productTranslations.language, language)
-        )
+      .leftJoin(
+        sql`product_translations as pt_requested`,
+        sql`pt_requested.product_id = ${products.id} AND pt_requested.language = ${language}`
+      )
+      .leftJoin(
+        sql`product_translations as pt_fallback`,
+        sql`pt_fallback.product_id = ${products.id} AND pt_fallback.language = 'en'`
       )
       .where(whereClause.length ? and(...whereClause) : undefined);
 
@@ -372,32 +385,42 @@ export class ProductService {
         .select({
           productId: productAttributeValues.productId,
           attributeId: attributes.id,
-          attributeName: attributeTranslations.name,
+          attributeName: sql<string>`COALESCE(
+            at_requested.name,
+            at_fallback.name,
+            ${attributes.name}
+          )`,
           valueId: attributeValues.id,
-          value: attributeValueTranslations.value,
+          value: sql<string>`COALESCE(
+            av_requested.value,
+            av_fallback.value,
+            ${attributeValues.value}
+          )`,
         })
         .from(productAttributeValues)
         .innerJoin(
           attributes,
           eq(productAttributeValues.attributeId, attributes.id)
         )
-        .innerJoin(
-          attributeTranslations,
-          and(
-            eq(attributeTranslations.attributeId, attributes.id),
-            eq(attributeTranslations.language, language)
-          )
+        .leftJoin(
+          sql`attribute_translations as at_requested`,
+          sql`at_requested.attribute_id = ${attributes.id} AND at_requested.language = ${language}`
+        )
+        .leftJoin(
+          sql`attribute_translations as at_fallback`,
+          sql`at_fallback.attribute_id = ${attributes.id} AND at_fallback.language = 'en'`
         )
         .innerJoin(
           attributeValues,
           eq(productAttributeValues.attributeValueId, attributeValues.id)
         )
-        .innerJoin(
-          attributeValueTranslations,
-          and(
-            eq(attributeValueTranslations.attributeValueId, attributeValues.id),
-            eq(attributeValueTranslations.language, language)
-          )
+        .leftJoin(
+          sql`attribute_value_translations as av_requested`,
+          sql`av_requested.attribute_value_id = ${attributeValues.id} AND av_requested.language = ${language}`
+        )
+        .leftJoin(
+          sql`attribute_value_translations as av_fallback`,
+          sql`av_fallback.attribute_value_id = ${attributeValues.id} AND av_fallback.language = 'en'`
         )
         .where(inArray(productAttributeValues.productId, ids));
     }
@@ -418,15 +441,17 @@ export class ProductService {
       attributes: groupedAttributes[p.id] ?? [],
     }));
 
+    // Count query - needs same joins and where clause for accurate count
     const [{ count }] = await db
       .select({ count: sql<number>`COUNT(*)` })
       .from(products)
-      .innerJoin(
-        productTranslations,
-        and(
-          eq(productTranslations.productId, products.id),
-          eq(productTranslations.language, language)
-        )
+      .leftJoin(
+        sql`product_translations as pt_requested`,
+        sql`pt_requested.product_id = ${products.id} AND pt_requested.language = ${language}`
+      )
+      .leftJoin(
+        sql`product_translations as pt_fallback`,
+        sql`pt_fallback.product_id = ${products.id} AND pt_fallback.language = 'en'`
       )
       .where(whereClause.length ? and(...whereClause) : undefined);
 
@@ -834,32 +859,42 @@ export class ProductService {
         .select({
           productId: productAttributeValues.productId,
           attributeId: attributes.id,
-          attributeName: attributeTranslations.name,
+          attributeName: sql<string>`COALESCE(
+            at_requested.name,
+            at_fallback.name,
+            ${attributes.name}
+          )`,
           valueId: attributeValues.id,
-          value: attributeValueTranslations.value,
+          value: sql<string>`COALESCE(
+            av_requested.value,
+            av_fallback.value,
+            ${attributeValues.value}
+          )`,
         })
         .from(productAttributeValues)
         .innerJoin(
           attributes,
           eq(productAttributeValues.attributeId, attributes.id)
         )
-        .innerJoin(
-          attributeTranslations,
-          and(
-            eq(attributeTranslations.attributeId, attributes.id),
-            eq(attributeTranslations.language, language)
-          )
+        .leftJoin(
+          sql`attribute_translations as at_requested`,
+          sql`at_requested.attribute_id = ${attributes.id} AND at_requested.language = ${language}`
+        )
+        .leftJoin(
+          sql`attribute_translations as at_fallback`,
+          sql`at_fallback.attribute_id = ${attributes.id} AND at_fallback.language = 'en'`
         )
         .innerJoin(
           attributeValues,
           eq(productAttributeValues.attributeValueId, attributeValues.id)
         )
-        .innerJoin(
-          attributeValueTranslations,
-          and(
-            eq(attributeValueTranslations.attributeValueId, attributeValues.id),
-            eq(attributeValueTranslations.language, language)
-          )
+        .leftJoin(
+          sql`attribute_value_translations as av_requested`,
+          sql`av_requested.attribute_value_id = ${attributeValues.id} AND av_requested.language = ${language}`
+        )
+        .leftJoin(
+          sql`attribute_value_translations as av_fallback`,
+          sql`av_fallback.attribute_value_id = ${attributeValues.id} AND av_fallback.language = 'en'`
         )
         .where(inArray(productAttributeValues.productId, ids));
     }
@@ -1013,32 +1048,42 @@ export class ProductService {
         .select({
           productId: productAttributeValues.productId,
           attributeId: attributes.id,
-          attributeName: attributeTranslations.name,
+          attributeName: sql<string>`COALESCE(
+            at_requested.name,
+            at_fallback.name,
+            ${attributes.name}
+          )`,
           valueId: attributeValues.id,
-          value: attributeValueTranslations.value,
+          value: sql<string>`COALESCE(
+            av_requested.value,
+            av_fallback.value,
+            ${attributeValues.value}
+          )`,
         })
         .from(productAttributeValues)
         .innerJoin(
           attributes,
           eq(productAttributeValues.attributeId, attributes.id)
         )
-        .innerJoin(
-          attributeTranslations,
-          and(
-            eq(attributeTranslations.attributeId, attributes.id),
-            eq(attributeTranslations.language, language)
-          )
+        .leftJoin(
+          sql`attribute_translations as at_requested`,
+          sql`at_requested.attribute_id = ${attributes.id} AND at_requested.language = ${language}`
+        )
+        .leftJoin(
+          sql`attribute_translations as at_fallback`,
+          sql`at_fallback.attribute_id = ${attributes.id} AND at_fallback.language = 'en'`
         )
         .innerJoin(
           attributeValues,
           eq(productAttributeValues.attributeValueId, attributeValues.id)
         )
-        .innerJoin(
-          attributeValueTranslations,
-          and(
-            eq(attributeValueTranslations.attributeValueId, attributeValues.id),
-            eq(attributeValueTranslations.language, language)
-          )
+        .leftJoin(
+          sql`attribute_value_translations as av_requested`,
+          sql`av_requested.attribute_value_id = ${attributeValues.id} AND av_requested.language = ${language}`
+        )
+        .leftJoin(
+          sql`attribute_value_translations as av_fallback`,
+          sql`av_fallback.attribute_value_id = ${attributeValues.id} AND av_fallback.language = 'en'`
         )
         .where(inArray(productAttributeValues.productId, ids));
     }
