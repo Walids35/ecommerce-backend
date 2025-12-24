@@ -35,7 +35,11 @@ async function seedDatabase() {
     // -------------------------------
     async function seedCategoryTranslations(
       categoryId: number,
-      translations: { en: { name: string; description: string; slug: string }; fr: { name: string; description: string; slug: string }; ar: { name: string; description: string; slug: string } }
+      translations: {
+        en: { name: string; description: string; slug: string };
+        fr: { name: string; description: string; slug: string };
+        ar: { name: string; description: string; slug: string };
+      }
     ) {
       for (const [lang, trans] of Object.entries(translations)) {
         const exists = await db
@@ -63,7 +67,11 @@ async function seedDatabase() {
 
     async function seedBrandTranslations(
       brandId: number,
-      translations: { en: { name: string; description: string; slug: string }; fr: { name: string; description: string; slug: string }; ar: { name: string; description: string; slug: string } }
+      translations: {
+        en: { name: string; description: string; slug: string };
+        fr: { name: string; description: string; slug: string };
+        ar: { name: string; description: string; slug: string };
+      }
     ) {
       for (const [lang, trans] of Object.entries(translations)) {
         const exists = await db
@@ -91,7 +99,11 @@ async function seedDatabase() {
 
     async function seedSubcategoryTranslations(
       subcategoryId: number,
-      translations: { en: { name: string; description: string }; fr: { name: string; description: string }; ar: { name: string; description: string } }
+      translations: {
+        en: { name: string; description: string };
+        fr: { name: string; description: string };
+        ar: { name: string; description: string };
+      }
     ) {
       for (const [lang, trans] of Object.entries(translations)) {
         const exists = await db
@@ -118,7 +130,11 @@ async function seedDatabase() {
 
     async function seedSubsubcategoryTranslations(
       subsubcategoryId: number,
-      translations: { en: { name: string; description: string; slug: string }; fr: { name: string; description: string; slug: string }; ar: { name: string; description: string; slug: string } }
+      translations: {
+        en: { name: string; description: string; slug: string };
+        fr: { name: string; description: string; slug: string };
+        ar: { name: string; description: string; slug: string };
+      }
     ) {
       for (const [lang, trans] of Object.entries(translations)) {
         const exists = await db
@@ -146,7 +162,11 @@ async function seedDatabase() {
 
     async function seedCollectionTranslations(
       collectionId: number,
-      translations: { en: { name: string; description: string; slug: string }; fr: { name: string; description: string; slug: string }; ar: { name: string; description: string; slug: string } }
+      translations: {
+        en: { name: string; description: string; slug: string };
+        fr: { name: string; description: string; slug: string };
+        ar: { name: string; description: string; slug: string };
+      }
     ) {
       for (const [lang, trans] of Object.entries(translations)) {
         const exists = await db
@@ -174,7 +194,11 @@ async function seedDatabase() {
 
     async function seedProductTranslations(
       productId: string,
-      translations: { en: { name: string; description: string; datasheet?: string }; fr: { name: string; description: string; datasheet?: string }; ar: { name: string; description: string; datasheet?: string } }
+      translations: {
+        en: { name: string; description: string; datasheet?: string };
+        fr: { name: string; description: string; datasheet?: string };
+        ar: { name: string; description: string; datasheet?: string };
+      }
     ) {
       for (const [lang, trans] of Object.entries(translations)) {
         const exists = await db
@@ -202,7 +226,11 @@ async function seedDatabase() {
 
     async function seedAttributeTranslations(
       attributeId: number,
-      translations: { en: { name: string }; fr: { name: string }; ar: { name: string } }
+      translations: {
+        en: { name: string };
+        fr: { name: string };
+        ar: { name: string };
+      }
     ) {
       for (const [lang, trans] of Object.entries(translations)) {
         const exists = await db
@@ -228,7 +256,11 @@ async function seedDatabase() {
 
     async function seedAttributeValueTranslations(
       attributeValueId: number,
-      translations: { en: { value: string }; fr: { value: string }; ar: { value: string } }
+      translations: {
+        en: { value: string };
+        fr: { value: string };
+        ar: { value: string };
+      }
     ) {
       for (const [lang, trans] of Object.entries(translations)) {
         const exists = await db
@@ -269,6 +301,9 @@ async function seedDatabase() {
         password: hashedPassword,
         name: "System Admin",
         role: "admin",
+        address: "123 Admin St, Admin City, Admin Country",
+        phone: "+1234567890",
+        matriculeFiscale: "123456789",
       });
 
       console.log("✔ Admin user seeded");
@@ -317,19 +352,22 @@ async function seedDatabase() {
     await seedCategoryTranslations(catElectronics.id, {
       en: {
         name: "Electronics",
-        description: "A comprehensive collection of electronic gadgets and devices including computers, smartphones, tablets, gaming consoles, and various technological accessories designed to enhance productivity, entertainment, and connectivity in modern life.",
-        slug: "electronics"
+        description:
+          "A comprehensive collection of electronic gadgets and devices including computers, smartphones, tablets, gaming consoles, and various technological accessories designed to enhance productivity, entertainment, and connectivity in modern life.",
+        slug: "electronics",
       },
       fr: {
         name: "Électronique",
-        description: "Une collection complète de gadgets et appareils électroniques comprenant des ordinateurs, smartphones, tablettes, consoles de jeux et divers accessoires technologiques conçus pour améliorer la productivité, le divertissement et la connectivité dans la vie moderne.",
-        slug: "electronique"
+        description:
+          "Une collection complète de gadgets et appareils électroniques comprenant des ordinateurs, smartphones, tablettes, consoles de jeux et divers accessoires technologiques conçus pour améliorer la productivité, le divertissement et la connectivité dans la vie moderne.",
+        slug: "electronique",
       },
       ar: {
         name: "إلكترونيات",
-        description: "مجموعة شاملة من الأجهزة الإلكترونية والأدوات بما في ذلك أجهزة الكمبيوتر والهواتف الذكية والأجهزة اللوحية وأجهزة الألعاب ومختلف الملحقات التكنولوجية المصممة لتعزيز الإنتاجية والترفيه والاتصال في الحياة الحديثة.",
-        slug: "electronics-ar"
-      }
+        description:
+          "مجموعة شاملة من الأجهزة الإلكترونية والأدوات بما في ذلك أجهزة الكمبيوتر والهواتف الذكية والأجهزة اللوحية وأجهزة الألعاب ومختلف الملحقات التكنولوجية المصممة لتعزيز الإنتاجية والترفيه والاتصال في الحياة الحديثة.",
+        slug: "electronics-ar",
+      },
     });
 
     const catFurniture = await seedCategory(
@@ -341,19 +379,22 @@ async function seedDatabase() {
     await seedCategoryTranslations(catFurniture.id, {
       en: {
         name: "Furniture",
-        description: "High-quality home and office furniture including chairs, desks, tables, cabinets, and storage solutions crafted from premium materials to provide comfort, functionality, and aesthetic appeal for residential and professional spaces.",
-        slug: "furniture"
+        description:
+          "High-quality home and office furniture including chairs, desks, tables, cabinets, and storage solutions crafted from premium materials to provide comfort, functionality, and aesthetic appeal for residential and professional spaces.",
+        slug: "furniture",
       },
       fr: {
         name: "Meubles",
-        description: "Meubles de maison et de bureau de haute qualité comprenant des chaises, bureaux, tables, armoires et solutions de rangement fabriqués à partir de matériaux de qualité supérieure pour offrir confort, fonctionnalité et attrait esthétique pour les espaces résidentiels et professionnels.",
-        slug: "meubles"
+        description:
+          "Meubles de maison et de bureau de haute qualité comprenant des chaises, bureaux, tables, armoires et solutions de rangement fabriqués à partir de matériaux de qualité supérieure pour offrir confort, fonctionnalité et attrait esthétique pour les espaces résidentiels et professionnels.",
+        slug: "meubles",
       },
       ar: {
         name: "أثاث",
-        description: "أثاث منزلي ومكتبي عالي الجودة بما في ذلك الكراسي والمكاتب والطاولات والخزائن وحلول التخزين المصنوعة من مواد فاخرة لتوفير الراحة والوظائف والجاذبية الجمالية للمساحات السكنية والمهنية.",
-        slug: "furniture-ar"
-      }
+        description:
+          "أثاث منزلي ومكتبي عالي الجودة بما في ذلك الكراسي والمكاتب والطاولات والخزائن وحلول التخزين المصنوعة من مواد فاخرة لتوفير الراحة والوظائف والجاذبية الجمالية للمساحات السكنية والمهنية.",
+        slug: "furniture-ar",
+      },
     });
 
     console.log("✔ Categories seeded with translations");
@@ -463,51 +504,170 @@ async function seedDatabase() {
 
     // Add translations for all brands
     await seedBrandTranslations(asus.id, {
-      en: { name: "ASUS", description: "ASUSTeK Computer Inc. is a Taiwanese multinational company known for computer hardware and electronics", slug: "asus" },
-      fr: { name: "ASUS", description: "ASUSTeK Computer Inc. est une entreprise multinationale taïwanaise connue pour son matériel informatique et son électronique", slug: "asus" },
-      ar: { name: "أسوس", description: "شركة ASUSTeK Computer Inc. هي شركة متعددة الجنسيات تايوانية معروفة بأجهزة الكمبيوتر والإلكترونيات", slug: "asus-ar" }
+      en: {
+        name: "ASUS",
+        description:
+          "ASUSTeK Computer Inc. is a Taiwanese multinational company known for computer hardware and electronics",
+        slug: "asus",
+      },
+      fr: {
+        name: "ASUS",
+        description:
+          "ASUSTeK Computer Inc. est une entreprise multinationale taïwanaise connue pour son matériel informatique et son électronique",
+        slug: "asus",
+      },
+      ar: {
+        name: "أسوس",
+        description:
+          "شركة ASUSTeK Computer Inc. هي شركة متعددة الجنسيات تايوانية معروفة بأجهزة الكمبيوتر والإلكترونيات",
+        slug: "asus-ar",
+      },
     });
 
     await seedBrandTranslations(msi.id, {
-      en: { name: "MSI", description: "Micro-Star International is a Taiwanese multinational company specializing in gaming hardware", slug: "msi" },
-      fr: { name: "MSI", description: "Micro-Star International est une entreprise multinationale taïwanaise spécialisée dans le matériel de jeu", slug: "msi" },
-      ar: { name: "إم إس آي", description: "Micro-Star International هي شركة متعددة الجنسيات تايوانية متخصصة في أجهزة الألعاب", slug: "msi-ar" }
+      en: {
+        name: "MSI",
+        description:
+          "Micro-Star International is a Taiwanese multinational company specializing in gaming hardware",
+        slug: "msi",
+      },
+      fr: {
+        name: "MSI",
+        description:
+          "Micro-Star International est une entreprise multinationale taïwanaise spécialisée dans le matériel de jeu",
+        slug: "msi",
+      },
+      ar: {
+        name: "إم إس آي",
+        description:
+          "Micro-Star International هي شركة متعددة الجنسيات تايوانية متخصصة في أجهزة الألعاب",
+        slug: "msi-ar",
+      },
     });
 
     await seedBrandTranslations(lenovo.id, {
-      en: { name: "Lenovo", description: "Lenovo Group Limited is a Chinese multinational technology company", slug: "lenovo" },
-      fr: { name: "Lenovo", description: "Lenovo Group Limited est une entreprise technologique multinationale chinoise", slug: "lenovo" },
-      ar: { name: "لينوفو", description: "Lenovo Group Limited هي شركة تكنولوجيا صينية متعددة الجنسيات", slug: "lenovo-ar" }
+      en: {
+        name: "Lenovo",
+        description:
+          "Lenovo Group Limited is a Chinese multinational technology company",
+        slug: "lenovo",
+      },
+      fr: {
+        name: "Lenovo",
+        description:
+          "Lenovo Group Limited est une entreprise technologique multinationale chinoise",
+        slug: "lenovo",
+      },
+      ar: {
+        name: "لينوفو",
+        description:
+          "Lenovo Group Limited هي شركة تكنولوجيا صينية متعددة الجنسيات",
+        slug: "lenovo-ar",
+      },
     });
 
     await seedBrandTranslations(dell.id, {
-      en: { name: "Dell", description: "Dell Inc. is an American multinational computer technology company", slug: "dell" },
-      fr: { name: "Dell", description: "Dell Inc. est une entreprise américaine multinationale de technologie informatique", slug: "dell" },
-      ar: { name: "ديل", description: "Dell Inc. هي شركة أمريكية متعددة الجنسيات لتكنولوجيا الكمبيوتر", slug: "dell-ar" }
+      en: {
+        name: "Dell",
+        description:
+          "Dell Inc. is an American multinational computer technology company",
+        slug: "dell",
+      },
+      fr: {
+        name: "Dell",
+        description:
+          "Dell Inc. est une entreprise américaine multinationale de technologie informatique",
+        slug: "dell",
+      },
+      ar: {
+        name: "ديل",
+        description:
+          "Dell Inc. هي شركة أمريكية متعددة الجنسيات لتكنولوجيا الكمبيوتر",
+        slug: "dell-ar",
+      },
     });
 
     await seedBrandTranslations(apple.id, {
-      en: { name: "Apple", description: "Apple Inc. is an American multinational technology company", slug: "apple" },
-      fr: { name: "Apple", description: "Apple Inc. est une entreprise technologique américaine multinationale", slug: "apple" },
-      ar: { name: "أبل", description: "Apple Inc. هي شركة تكنولوجيا أمريكية متعددة الجنسيات", slug: "apple-ar" }
+      en: {
+        name: "Apple",
+        description:
+          "Apple Inc. is an American multinational technology company",
+        slug: "apple",
+      },
+      fr: {
+        name: "Apple",
+        description:
+          "Apple Inc. est une entreprise technologique américaine multinationale",
+        slug: "apple",
+      },
+      ar: {
+        name: "أبل",
+        description: "Apple Inc. هي شركة تكنولوجيا أمريكية متعددة الجنسيات",
+        slug: "apple-ar",
+      },
     });
 
     await seedBrandTranslations(samsung.id, {
-      en: { name: "Samsung", description: "Samsung Electronics is a South Korean multinational electronics company", slug: "samsung" },
-      fr: { name: "Samsung", description: "Samsung Electronics est une entreprise d'électronique multinationale sud-coréenne", slug: "samsung" },
-      ar: { name: "سامسونج", description: "Samsung Electronics هي شركة إلكترونيات كورية جنوبية متعددة الجنسيات", slug: "samsung-ar" }
+      en: {
+        name: "Samsung",
+        description:
+          "Samsung Electronics is a South Korean multinational electronics company",
+        slug: "samsung",
+      },
+      fr: {
+        name: "Samsung",
+        description:
+          "Samsung Electronics est une entreprise d'électronique multinationale sud-coréenne",
+        slug: "samsung",
+      },
+      ar: {
+        name: "سامسونج",
+        description:
+          "Samsung Electronics هي شركة إلكترونيات كورية جنوبية متعددة الجنسيات",
+        slug: "samsung-ar",
+      },
     });
 
     await seedBrandTranslations(steelcase.id, {
-      en: { name: "Steelcase", description: "Steelcase Inc. is an American furniture company known for office furniture and ergonomic seating", slug: "steelcase" },
-      fr: { name: "Steelcase", description: "Steelcase Inc. est une entreprise américaine de meubles connue pour ses meubles de bureau et ses sièges ergonomiques", slug: "steelcase" },
-      ar: { name: "ستيل كيس", description: "Steelcase Inc. هي شركة أثاث أمريكية معروفة بأثاث المكاتب والمقاعد المريحة", slug: "steelcase-ar" }
+      en: {
+        name: "Steelcase",
+        description:
+          "Steelcase Inc. is an American furniture company known for office furniture and ergonomic seating",
+        slug: "steelcase",
+      },
+      fr: {
+        name: "Steelcase",
+        description:
+          "Steelcase Inc. est une entreprise américaine de meubles connue pour ses meubles de bureau et ses sièges ergonomiques",
+        slug: "steelcase",
+      },
+      ar: {
+        name: "ستيل كيس",
+        description:
+          "Steelcase Inc. هي شركة أثاث أمريكية معروفة بأثاث المكاتب والمقاعد المريحة",
+        slug: "steelcase-ar",
+      },
     });
 
     await seedBrandTranslations(hermanMiller.id, {
-      en: { name: "Herman Miller", description: "Herman Miller is an American company known for modern furniture design and ergonomic office chairs", slug: "herman-miller" },
-      fr: { name: "Herman Miller", description: "Herman Miller est une entreprise américaine connue pour son design de meubles modernes et ses chaises de bureau ergonomiques", slug: "herman-miller" },
-      ar: { name: "هيرمان ميلر", description: "Herman Miller هي شركة أمريكية معروفة بتصميم الأثاث الحديث والكراسي المكتبية المريحة", slug: "herman-miller-ar" }
+      en: {
+        name: "Herman Miller",
+        description:
+          "Herman Miller is an American company known for modern furniture design and ergonomic office chairs",
+        slug: "herman-miller",
+      },
+      fr: {
+        name: "Herman Miller",
+        description:
+          "Herman Miller est une entreprise américaine connue pour son design de meubles modernes et ses chaises de bureau ergonomiques",
+        slug: "herman-miller",
+      },
+      ar: {
+        name: "هيرمان ميلر",
+        description:
+          "Herman Miller هي شركة أمريكية معروفة بتصميم الأثاث الحديث والكراسي المكتبية المريحة",
+        slug: "herman-miller-ar",
+      },
     });
 
     console.log("✔ Brands seeded with translations");
@@ -578,46 +738,55 @@ async function seedDatabase() {
     await seedSubcategoryTranslations(laptopSub.id, {
       en: {
         name: "Laptops",
-        description: "A versatile range of portable computing devices designed for productivity, entertainment, and professional use, featuring various screen sizes, processing power, and battery life to meet diverse user needs from casual browsing to intensive creative work."
+        description:
+          "A versatile range of portable computing devices designed for productivity, entertainment, and professional use, featuring various screen sizes, processing power, and battery life to meet diverse user needs from casual browsing to intensive creative work.",
       },
       fr: {
         name: "Ordinateurs portables",
-        description: "Une gamme polyvalente d'appareils informatiques portables conçus pour la productivité, le divertissement et l'usage professionnel, avec diverses tailles d'écran, puissance de traitement et autonomie de batterie pour répondre aux divers besoins des utilisateurs, de la navigation occasionnelle au travail créatif intensif."
+        description:
+          "Une gamme polyvalente d'appareils informatiques portables conçus pour la productivité, le divertissement et l'usage professionnel, avec diverses tailles d'écran, puissance de traitement et autonomie de batterie pour répondre aux divers besoins des utilisateurs, de la navigation occasionnelle au travail créatif intensif.",
       },
       ar: {
         name: "أجهزة الكمبيوتر المحمولة",
-        description: "مجموعة متنوعة من أجهزة الحوسبة المحمولة المصممة للإنتاجية والترفيه والاستخدام المهني، تتميز بأحجام شاشات مختلفة وقوة معالجة وعمر بطارية لتلبية احتياجات المستخدمين المتنوعة من التصفح العادي إلى العمل الإبداعي المكثف."
-      }
+        description:
+          "مجموعة متنوعة من أجهزة الحوسبة المحمولة المصممة للإنتاجية والترفيه والاستخدام المهني، تتميز بأحجام شاشات مختلفة وقوة معالجة وعمر بطارية لتلبية احتياجات المستخدمين المتنوعة من التصفح العادي إلى العمل الإبداعي المكثف.",
+      },
     });
 
     await seedSubcategoryTranslations(tabletSub.id, {
       en: {
         name: "Tablets",
-        description: "Slim and lightweight touchscreen devices offering mobility and versatility for work, education, and entertainment, with capabilities ranging from basic web browsing to advanced creative applications and gaming."
+        description:
+          "Slim and lightweight touchscreen devices offering mobility and versatility for work, education, and entertainment, with capabilities ranging from basic web browsing to advanced creative applications and gaming.",
       },
       fr: {
         name: "Tablettes",
-        description: "Appareils tactiles minces et légers offrant mobilité et polyvalence pour le travail, l'éducation et le divertissement, avec des capacités allant de la navigation Web de base aux applications créatives avancées et aux jeux."
+        description:
+          "Appareils tactiles minces et légers offrant mobilité et polyvalence pour le travail, l'éducation et le divertissement, avec des capacités allant de la navigation Web de base aux applications créatives avancées et aux jeux.",
       },
       ar: {
         name: "أجهزة لوحية",
-        description: "أجهزة شاشات لمس رفيعة وخفيفة الوزن توفر التنقل والتنوع للعمل والتعليم والترفيه، مع قدرات تتراوح من تصفح الويب الأساسي إلى التطبيقات الإبداعية المتقدمة والألعاب."
-      }
+        description:
+          "أجهزة شاشات لمس رفيعة وخفيفة الوزن توفر التنقل والتنوع للعمل والتعليم والترفيه، مع قدرات تتراوح من تصفح الويب الأساسي إلى التطبيقات الإبداعية المتقدمة والألعاب.",
+      },
     });
 
     await seedSubcategoryTranslations(chairSub.id, {
       en: {
         name: "Office Chairs",
-        description: "Professional seating solutions engineered for comfort and support during extended work sessions, featuring adjustable height, lumbar support, and ergonomic designs to promote proper posture and reduce fatigue."
+        description:
+          "Professional seating solutions engineered for comfort and support during extended work sessions, featuring adjustable height, lumbar support, and ergonomic designs to promote proper posture and reduce fatigue.",
       },
       fr: {
         name: "Chaises de bureau",
-        description: "Solutions d'assise professionnelles conçues pour le confort et le soutien lors de longues sessions de travail, avec hauteur réglable, soutien lombaire et designs ergonomiques pour favoriser une posture correcte et réduire la fatigue."
+        description:
+          "Solutions d'assise professionnelles conçues pour le confort et le soutien lors de longues sessions de travail, avec hauteur réglable, soutien lombaire et designs ergonomiques pour favoriser une posture correcte et réduire la fatigue.",
       },
       ar: {
         name: "كراسي المكتب",
-        description: "حلول جلوس احترافية مصممة للراحة والدعم أثناء جلسات العمل الممتدة، تتميز بارتفاع قابل للتعديل ودعم قطني وتصميمات مريحة لتعزيز الوضعية الصحيحة وتقليل التعب."
-      }
+        description:
+          "حلول جلوس احترافية مصممة للراحة والدعم أثناء جلسات العمل الممتدة، تتميز بارتفاع قابل للتعديل ودعم قطني وتصميمات مريحة لتعزيز الوضعية الصحيحة وتقليل التعب.",
+      },
     });
 
     console.log("✔ Subcategories seeded with translations");
@@ -674,37 +843,43 @@ async function seedDatabase() {
     await seedSubsubcategoryTranslations(gamingLaptopSub.id, {
       en: {
         name: "Gaming Laptops",
-        description: "Powerful computing machines designed specifically for gaming enthusiasts, featuring high-end graphics cards, fast processors, advanced cooling systems, and high-refresh-rate displays to deliver immersive gaming experiences with smooth frame rates and stunning visuals.",
-        slug: "gaming-laptops"
+        description:
+          "Powerful computing machines designed specifically for gaming enthusiasts, featuring high-end graphics cards, fast processors, advanced cooling systems, and high-refresh-rate displays to deliver immersive gaming experiences with smooth frame rates and stunning visuals.",
+        slug: "gaming-laptops",
       },
       fr: {
         name: "Ordinateurs portables de jeu",
-        description: "Machines informatiques puissantes conçues spécifiquement pour les passionnés de jeux, dotées de cartes graphiques haut de gamme, de processeurs rapides, de systèmes de refroidissement avancés et d'écrans à taux de rafraîchissement élevé pour offrir des expériences de jeu immersives avec des fréquences d'images fluides et des visuels époustouflants.",
-        slug: "ordinateurs-portables-jeu"
+        description:
+          "Machines informatiques puissantes conçues spécifiquement pour les passionnés de jeux, dotées de cartes graphiques haut de gamme, de processeurs rapides, de systèmes de refroidissement avancés et d'écrans à taux de rafraîchissement élevé pour offrir des expériences de jeu immersives avec des fréquences d'images fluides et des visuels époustouflants.",
+        slug: "ordinateurs-portables-jeu",
       },
       ar: {
         name: "أجهزة كمبيوتر محمولة للألعاب",
-        description: "أجهزة حوسبة قوية مصممة خصيصًا لعشاق الألعاب، تتميز ببطاقات رسومات متطورة ومعالجات سريعة وأنظمة تبريد متقدمة وشاشات بمعدل تحديث عالٍ لتقديم تجارب ألعاب غامرة بمعدلات إطارات سلسة ومرئيات مذهلة.",
-        slug: "gaming-laptops-ar"
-      }
+        description:
+          "أجهزة حوسبة قوية مصممة خصيصًا لعشاق الألعاب، تتميز ببطاقات رسومات متطورة ومعالجات سريعة وأنظمة تبريد متقدمة وشاشات بمعدل تحديث عالٍ لتقديم تجارب ألعاب غامرة بمعدلات إطارات سلسة ومرئيات مذهلة.",
+        slug: "gaming-laptops-ar",
+      },
     });
 
     await seedSubsubcategoryTranslations(businessLaptopSub.id, {
       en: {
         name: "Business Laptops",
-        description: "Reliable and secure computing solutions tailored for professional environments, offering robust security features, excellent battery life, lightweight designs, and compatibility with business software to support productivity and remote work requirements.",
-        slug: "business-laptops"
+        description:
+          "Reliable and secure computing solutions tailored for professional environments, offering robust security features, excellent battery life, lightweight designs, and compatibility with business software to support productivity and remote work requirements.",
+        slug: "business-laptops",
       },
       fr: {
         name: "Ordinateurs portables professionnels",
-        description: "Solutions informatiques fiables et sécurisées adaptées aux environnements professionnels, offrant des fonctionnalités de sécurité robustes, une excellente autonomie de batterie, des designs légers et une compatibilité avec les logiciels professionnels pour soutenir la productivité et les exigences du travail à distance.",
-        slug: "ordinateurs-portables-professionnels"
+        description:
+          "Solutions informatiques fiables et sécurisées adaptées aux environnements professionnels, offrant des fonctionnalités de sécurité robustes, une excellente autonomie de batterie, des designs légers et une compatibilité avec les logiciels professionnels pour soutenir la productivité et les exigences du travail à distance.",
+        slug: "ordinateurs-portables-professionnels",
       },
       ar: {
         name: "أجهزة كمبيوتر محمولة للأعمال",
-        description: "حلول حوسبة موثوقة وآمنة مصممة للبيئات المهنية، توفر ميزات أمان قوية وعمر بطارية ممتاز وتصميمات خفيفة الوزن وتوافق مع برامج الأعمال لدعم الإنتاجية ومتطلبات العمل عن بُعد.",
-        slug: "business-laptops-ar"
-      }
+        description:
+          "حلول حوسبة موثوقة وآمنة مصممة للبيئات المهنية، توفر ميزات أمان قوية وعمر بطارية ممتاز وتصميمات خفيفة الوزن وتوافق مع برامج الأعمال لدعم الإنتاجية ومتطلبات العمل عن بُعد.",
+        slug: "business-laptops-ar",
+      },
     });
 
     console.log("✔ Subsubcategories seeded with translations");
@@ -809,85 +984,85 @@ async function seedDatabase() {
     await seedAttributeTranslations(gpuAttr.id, {
       en: { name: "GPU" },
       fr: { name: "Carte graphique" },
-      ar: { name: "بطاقة الرسومات" }
+      ar: { name: "بطاقة الرسومات" },
     });
 
     await seedAttributeTranslations(refreshRateAttr.id, {
       en: { name: "Refresh Rate" },
       fr: { name: "Taux de rafraîchissement" },
-      ar: { name: "معدل التحديث" }
+      ar: { name: "معدل التحديث" },
     });
 
     await seedAttributeTranslations(gamingRamAttr.id, {
       en: { name: "RAM" },
       fr: { name: "Mémoire vive" },
-      ar: { name: "الذاكرة العشوائية" }
+      ar: { name: "الذاكرة العشوائية" },
     });
 
     await seedAttributeTranslations(gamingCpuAttr.id, {
       en: { name: "Processor" },
       fr: { name: "Processeur" },
-      ar: { name: "المعالج" }
+      ar: { name: "المعالج" },
     });
 
     await seedAttributeTranslations(gamingStorageAttr.id, {
       en: { name: "Storage" },
       fr: { name: "Stockage" },
-      ar: { name: "التخزين" }
+      ar: { name: "التخزين" },
     });
 
     await seedAttributeTranslations(weightAttr.id, {
       en: { name: "Weight" },
       fr: { name: "Poids" },
-      ar: { name: "الوزن" }
+      ar: { name: "الوزن" },
     });
 
     await seedAttributeTranslations(batteryLifeAttr.id, {
       en: { name: "Battery Life" },
       fr: { name: "Autonomie de la batterie" },
-      ar: { name: "عمر البطارية" }
+      ar: { name: "عمر البطارية" },
     });
 
     await seedAttributeTranslations(businessRamAttr.id, {
       en: { name: "RAM" },
       fr: { name: "Mémoire vive" },
-      ar: { name: "الذاكرة العشوائية" }
+      ar: { name: "الذاكرة العشوائية" },
     });
 
     await seedAttributeTranslations(businessCpuAttr.id, {
       en: { name: "Processor" },
       fr: { name: "Processeur" },
-      ar: { name: "المعالج" }
+      ar: { name: "المعالج" },
     });
 
     await seedAttributeTranslations(businessStorageAttr.id, {
       en: { name: "Storage" },
       fr: { name: "Stockage" },
-      ar: { name: "التخزين" }
+      ar: { name: "التخزين" },
     });
 
     await seedAttributeTranslations(screenSizeAttr.id, {
       en: { name: "Screen Size" },
       fr: { name: "Taille de l'écran" },
-      ar: { name: "حجم الشاشة" }
+      ar: { name: "حجم الشاشة" },
     });
 
     await seedAttributeTranslations(tabletStorageAttr.id, {
       en: { name: "Storage" },
       fr: { name: "Stockage" },
-      ar: { name: "التخزين" }
+      ar: { name: "التخزين" },
     });
 
     await seedAttributeTranslations(materialAttr.id, {
       en: { name: "Material" },
       fr: { name: "Matériau" },
-      ar: { name: "المادة" }
+      ar: { name: "المادة" },
     });
 
     await seedAttributeTranslations(maxWeightAttr.id, {
       en: { name: "Max Weight" },
       fr: { name: "Poids maximum" },
-      ar: { name: "الوزن الأقصى" }
+      ar: { name: "الوزن الأقصى" },
     });
 
     console.log("✔ Attributes seeded with translations");
@@ -964,136 +1139,136 @@ async function seedDatabase() {
     await seedAttributeValueTranslations(gamingRam32.id, {
       en: { value: "32GB" },
       fr: { value: "32 Go" },
-      ar: { value: "32 جيجابايت" }
+      ar: { value: "32 جيجابايت" },
     });
 
     await seedAttributeValueTranslations(gamingCpuI9.id, {
       en: { value: "Intel i9" },
       fr: { value: "Intel i9" },
-      ar: { value: "إنتل i9" }
+      ar: { value: "إنتل i9" },
     });
 
     await seedAttributeValueTranslations(gamingStorage1tb.id, {
       en: { value: "1TB SSD" },
       fr: { value: "SSD 1 To" },
-      ar: { value: "1 تيرابايت SSD" }
+      ar: { value: "1 تيرابايت SSD" },
     });
 
     await seedAttributeValueTranslations(gpuRtx4070.id, {
       en: { value: "RTX 4070" },
       fr: { value: "RTX 4070" },
-      ar: { value: "RTX 4070" }
+      ar: { value: "RTX 4070" },
     });
 
     await seedAttributeValueTranslations(gpuRtx4090.id, {
       en: { value: "RTX 4090" },
       fr: { value: "RTX 4090" },
-      ar: { value: "RTX 4090" }
+      ar: { value: "RTX 4090" },
     });
 
     await seedAttributeValueTranslations(refresh144.id, {
       en: { value: "144Hz" },
       fr: { value: "144 Hz" },
-      ar: { value: "144 هرتز" }
+      ar: { value: "144 هرتز" },
     });
 
     await seedAttributeValueTranslations(refresh240.id, {
       en: { value: "240Hz" },
       fr: { value: "240 Hz" },
-      ar: { value: "240 هرتز" }
+      ar: { value: "240 هرتز" },
     });
 
     // Business laptop values
     await seedAttributeValueTranslations(businessRam16.id, {
       en: { value: "16GB" },
       fr: { value: "16 Go" },
-      ar: { value: "16 جيجابايت" }
+      ar: { value: "16 جيجابايت" },
     });
 
     await seedAttributeValueTranslations(businessCpuI7.id, {
       en: { value: "Intel i7" },
       fr: { value: "Intel i7" },
-      ar: { value: "إنتل i7" }
+      ar: { value: "إنتل i7" },
     });
 
     await seedAttributeValueTranslations(businessStorage512.id, {
       en: { value: "512GB SSD" },
       fr: { value: "SSD 512 Go" },
-      ar: { value: "512 جيجابايت SSD" }
+      ar: { value: "512 جيجابايت SSD" },
     });
 
     await seedAttributeValueTranslations(weight15kg.id, {
       en: { value: "1.5kg" },
       fr: { value: "1,5 kg" },
-      ar: { value: "1.5 كجم" }
+      ar: { value: "1.5 كجم" },
     });
 
     await seedAttributeValueTranslations(weight18kg.id, {
       en: { value: "1.8kg" },
       fr: { value: "1,8 kg" },
-      ar: { value: "1.8 كجم" }
+      ar: { value: "1.8 كجم" },
     });
 
     await seedAttributeValueTranslations(battery10h.id, {
       en: { value: "10 hours" },
       fr: { value: "10 heures" },
-      ar: { value: "10 ساعات" }
+      ar: { value: "10 ساعات" },
     });
 
     await seedAttributeValueTranslations(battery15h.id, {
       en: { value: "15 hours" },
       fr: { value: "15 heures" },
-      ar: { value: "15 ساعة" }
+      ar: { value: "15 ساعة" },
     });
 
     // Tablet values
     await seedAttributeValueTranslations(screen10.id, {
       en: { value: "10.5 inch" },
       fr: { value: "10,5 pouces" },
-      ar: { value: "10.5 بوصة" }
+      ar: { value: "10.5 بوصة" },
     });
 
     await seedAttributeValueTranslations(screen11.id, {
       en: { value: "11 inch" },
       fr: { value: "11 pouces" },
-      ar: { value: "11 بوصة" }
+      ar: { value: "11 بوصة" },
     });
 
     await seedAttributeValueTranslations(tablet128.id, {
       en: { value: "128GB" },
       fr: { value: "128 Go" },
-      ar: { value: "128 جيجابايت" }
+      ar: { value: "128 جيجابايت" },
     });
 
     await seedAttributeValueTranslations(tablet256.id, {
       en: { value: "256GB" },
       fr: { value: "256 Go" },
-      ar: { value: "256 جيجابايت" }
+      ar: { value: "256 جيجابايت" },
     });
 
     // Chair values
     await seedAttributeValueTranslations(materialLeather.id, {
       en: { value: "Leather" },
       fr: { value: "Cuir" },
-      ar: { value: "جلد" }
+      ar: { value: "جلد" },
     });
 
     await seedAttributeValueTranslations(materialMesh.id, {
       en: { value: "Mesh" },
       fr: { value: "Maille" },
-      ar: { value: "شبكة" }
+      ar: { value: "شبكة" },
     });
 
     await seedAttributeValueTranslations(weight120.id, {
       en: { value: "120kg" },
       fr: { value: "120 kg" },
-      ar: { value: "120 كجم" }
+      ar: { value: "120 كجم" },
     });
 
     await seedAttributeValueTranslations(weight150.id, {
       en: { value: "150kg" },
       fr: { value: "150 kg" },
-      ar: { value: "150 كجم" }
+      ar: { value: "150 كجم" },
     });
 
     console.log("✔ Attribute values seeded with translations");
@@ -1292,145 +1467,169 @@ async function seedDatabase() {
     await seedProductTranslations(rog.id, {
       en: {
         name: "ASUS ROG Strix",
-        description: "High-end gaming laptop with RGB lighting, powerful graphics, and exceptional performance for demanding games and creative work.",
-        datasheet: "asus-rog-strix-datasheet-en.pdf"
+        description:
+          "High-end gaming laptop with RGB lighting, powerful graphics, and exceptional performance for demanding games and creative work.",
+        datasheet: "asus-rog-strix-datasheet-en.pdf",
       },
       fr: {
         name: "ASUS ROG Strix",
-        description: "Ordinateur portable de gaming haut de gamme avec éclairage RGB, carte graphique puissante et performances exceptionnelles pour les jeux exigeants et le travail créatif.",
-        datasheet: "asus-rog-strix-datasheet-fr.pdf"
+        description:
+          "Ordinateur portable de gaming haut de gamme avec éclairage RGB, carte graphique puissante et performances exceptionnelles pour les jeux exigeants et le travail créatif.",
+        datasheet: "asus-rog-strix-datasheet-fr.pdf",
       },
       ar: {
         name: "ASUS ROG Strix",
-        description: "جهاز كمبيوتر محمول للألعاب عالي الجودة مع إضاءة RGB وبطاقة رسومات قوية وأداء استثنائي للألعاب المتطلبة والعمل الإبداعي.",
-        datasheet: "asus-rog-strix-datasheet-ar.pdf"
-      }
+        description:
+          "جهاز كمبيوتر محمول للألعاب عالي الجودة مع إضاءة RGB وبطاقة رسومات قوية وأداء استثنائي للألعاب المتطلبة والعمل الإبداعي.",
+        datasheet: "asus-rog-strix-datasheet-ar.pdf",
+      },
     });
 
     await seedProductTranslations(msiGaming.id, {
       en: {
         name: "MSI GE76 Raider",
-        description: "Powerful gaming laptop with advanced cooling system, high refresh rate display, and cutting-edge components for the ultimate gaming experience.",
-        datasheet: "msi-ge76-raider-datasheet-en.pdf"
+        description:
+          "Powerful gaming laptop with advanced cooling system, high refresh rate display, and cutting-edge components for the ultimate gaming experience.",
+        datasheet: "msi-ge76-raider-datasheet-en.pdf",
       },
       fr: {
         name: "MSI GE76 Raider",
-        description: "Ordinateur portable de gaming puissant avec système de refroidissement avancé, écran à taux de rafraîchissement élevé et composants de pointe pour une expérience de jeu ultime.",
-        datasheet: "msi-ge76-raider-datasheet-fr.pdf"
+        description:
+          "Ordinateur portable de gaming puissant avec système de refroidissement avancé, écran à taux de rafraîchissement élevé et composants de pointe pour une expérience de jeu ultime.",
+        datasheet: "msi-ge76-raider-datasheet-fr.pdf",
       },
       ar: {
         name: "MSI GE76 Raider",
-        description: "جهاز كمبيوتر محمول قوي للألعاب مع نظام تبريد متقدم وشاشة بمعدل تحديث عالي ومكونات حديثة لتجربة ألعاب نهائية.",
-        datasheet: "msi-ge76-raider-datasheet-ar.pdf"
-      }
+        description:
+          "جهاز كمبيوتر محمول قوي للألعاب مع نظام تبريد متقدم وشاشة بمعدل تحديث عالي ومكونات حديثة لتجربة ألعاب نهائية.",
+        datasheet: "msi-ge76-raider-datasheet-ar.pdf",
+      },
     });
 
     await seedProductTranslations(thinkpad.id, {
       en: {
         name: "ThinkPad X1 Carbon",
-        description: "Ultra-portable business laptop with military-grade durability, exceptional battery life, and enterprise-level security features for professionals on the go.",
-        datasheet: "thinkpad-x1-carbon-datasheet-en.pdf"
+        description:
+          "Ultra-portable business laptop with military-grade durability, exceptional battery life, and enterprise-level security features for professionals on the go.",
+        datasheet: "thinkpad-x1-carbon-datasheet-en.pdf",
       },
       fr: {
         name: "ThinkPad X1 Carbon",
-        description: "Ordinateur portable professionnel ultra-portable avec durabilité de grade militaire, autonomie exceptionnelle et fonctionnalités de sécurité de niveau entreprise pour les professionnels en déplacement.",
-        datasheet: "thinkpad-x1-carbon-datasheet-fr.pdf"
+        description:
+          "Ordinateur portable professionnel ultra-portable avec durabilité de grade militaire, autonomie exceptionnelle et fonctionnalités de sécurité de niveau entreprise pour les professionnels en déplacement.",
+        datasheet: "thinkpad-x1-carbon-datasheet-fr.pdf",
       },
       ar: {
         name: "ThinkPad X1 Carbon",
-        description: "جهاز كمبيوتر محمول للأعمال فائق الحمل مع متانة عسكرية وعمر بطارية استثنائي وميزات أمان على مستوى المؤسسات للمحترفين أثناء التنقل.",
-        datasheet: "thinkpad-x1-carbon-datasheet-ar.pdf"
-      }
+        description:
+          "جهاز كمبيوتر محمول للأعمال فائق الحمل مع متانة عسكرية وعمر بطارية استثنائي وميزات أمان على مستوى المؤسسات للمحترفين أثناء التنقل.",
+        datasheet: "thinkpad-x1-carbon-datasheet-ar.pdf",
+      },
     });
 
     await seedProductTranslations(latitude.id, {
       en: {
         name: "Dell Latitude 9000",
-        description: "Enterprise-grade laptop with AI-enhanced collaboration features, intelligent audio, and premium build quality designed for modern business environments.",
-        datasheet: "dell-latitude-9000-datasheet-en.pdf"
+        description:
+          "Enterprise-grade laptop with AI-enhanced collaboration features, intelligent audio, and premium build quality designed for modern business environments.",
+        datasheet: "dell-latitude-9000-datasheet-en.pdf",
       },
       fr: {
         name: "Dell Latitude 9000",
-        description: "Ordinateur portable de niveau entreprise avec fonctionnalités de collaboration améliorées par l'IA, audio intelligent et qualité de fabrication premium conçu pour les environnements professionnels modernes.",
-        datasheet: "dell-latitude-9000-datasheet-fr.pdf"
+        description:
+          "Ordinateur portable de niveau entreprise avec fonctionnalités de collaboration améliorées par l'IA, audio intelligent et qualité de fabrication premium conçu pour les environnements professionnels modernes.",
+        datasheet: "dell-latitude-9000-datasheet-fr.pdf",
       },
       ar: {
         name: "Dell Latitude 9000",
-        description: "جهاز كمبيوتر محمول على مستوى المؤسسات مع ميزات تعاون محسّنة بالذكاء الاصطناعي وصوت ذكي وجودة بناء متميزة مصممة لبيئات الأعمال الحديثة.",
-        datasheet: "dell-latitude-9000-datasheet-ar.pdf"
-      }
+        description:
+          "جهاز كمبيوتر محمول على مستوى المؤسسات مع ميزات تعاون محسّنة بالذكاء الاصطناعي وصوت ذكي وجودة بناء متميزة مصممة لبيئات الأعمال الحديثة.",
+        datasheet: "dell-latitude-9000-datasheet-ar.pdf",
+      },
     });
 
     await seedProductTranslations(ipad.id, {
       en: {
         name: "iPad Air",
-        description: "Lightweight and powerful tablet with stunning Liquid Retina display, M1 chip performance, and all-day battery life for creativity and productivity anywhere.",
-        datasheet: "ipad-air-datasheet-en.pdf"
+        description:
+          "Lightweight and powerful tablet with stunning Liquid Retina display, M1 chip performance, and all-day battery life for creativity and productivity anywhere.",
+        datasheet: "ipad-air-datasheet-en.pdf",
       },
       fr: {
         name: "iPad Air",
-        description: "Tablette légère et puissante avec écran Liquid Retina époustouflant, performances de puce M1 et autonomie d'une journée pour la créativité et la productivité partout.",
-        datasheet: "ipad-air-datasheet-fr.pdf"
+        description:
+          "Tablette légère et puissante avec écran Liquid Retina époustouflant, performances de puce M1 et autonomie d'une journée pour la créativité et la productivité partout.",
+        datasheet: "ipad-air-datasheet-fr.pdf",
       },
       ar: {
         name: "iPad Air",
-        description: "جهاز لوحي خفيف وقوي مع شاشة Liquid Retina مذهلة وأداء شريحة M1 وعمر بطارية طوال اليوم للإبداع والإنتاجية في أي مكان.",
-        datasheet: "ipad-air-datasheet-ar.pdf"
-      }
+        description:
+          "جهاز لوحي خفيف وقوي مع شاشة Liquid Retina مذهلة وأداء شريحة M1 وعمر بطارية طوال اليوم للإبداع والإنتاجية في أي مكان.",
+        datasheet: "ipad-air-datasheet-ar.pdf",
+      },
     });
 
     await seedProductTranslations(galaxy.id, {
       en: {
         name: "Samsung Galaxy Tab S9",
-        description: "Android tablet with S Pen included, powerful processor, vibrant AMOLED display, and seamless integration with Samsung ecosystem for enhanced productivity.",
-        datasheet: "samsung-galaxy-tab-s9-datasheet-en.pdf"
+        description:
+          "Android tablet with S Pen included, powerful processor, vibrant AMOLED display, and seamless integration with Samsung ecosystem for enhanced productivity.",
+        datasheet: "samsung-galaxy-tab-s9-datasheet-en.pdf",
       },
       fr: {
         name: "Samsung Galaxy Tab S9",
-        description: "Tablette Android avec S Pen inclus, processeur puissant, écran AMOLED vibrant et intégration transparente avec l'écosystème Samsung pour une productivité améliorée.",
-        datasheet: "samsung-galaxy-tab-s9-datasheet-fr.pdf"
+        description:
+          "Tablette Android avec S Pen inclus, processeur puissant, écran AMOLED vibrant et intégration transparente avec l'écosystème Samsung pour une productivité améliorée.",
+        datasheet: "samsung-galaxy-tab-s9-datasheet-fr.pdf",
       },
       ar: {
         name: "Samsung Galaxy Tab S9",
-        description: "جهاز لوحي يعمل بنظام Android مع قلم S Pen مضمّن ومعالج قوي وشاشة AMOLED نابضة بالحياة وتكامل سلس مع نظام Samsung البيئي لإنتاجية محسّنة.",
-        datasheet: "samsung-galaxy-tab-s9-datasheet-ar.pdf"
-      }
+        description:
+          "جهاز لوحي يعمل بنظام Android مع قلم S Pen مضمّن ومعالج قوي وشاشة AMOLED نابضة بالحياة وتكامل سلس مع نظام Samsung البيئي لإنتاجية محسّنة.",
+        datasheet: "samsung-galaxy-tab-s9-datasheet-ar.pdf",
+      },
     });
 
     await seedProductTranslations(ergomax.id, {
       en: {
         name: "ErgoMax Pro",
-        description: "Premium ergonomic office chair with adjustable lumbar support, breathable mesh back, and multi-dimensional armrests for superior comfort during long work sessions.",
-        datasheet: "ergomax-pro-datasheet-en.pdf"
+        description:
+          "Premium ergonomic office chair with adjustable lumbar support, breathable mesh back, and multi-dimensional armrests for superior comfort during long work sessions.",
+        datasheet: "ergomax-pro-datasheet-en.pdf",
       },
       fr: {
         name: "ErgoMax Pro",
-        description: "Chaise de bureau ergonomique premium avec support lombaire réglable, dossier en maille respirante et accoudoirs multidimensionnels pour un confort supérieur pendant les longues sessions de travail.",
-        datasheet: "ergomax-pro-datasheet-fr.pdf"
+        description:
+          "Chaise de bureau ergonomique premium avec support lombaire réglable, dossier en maille respirante et accoudoirs multidimensionnels pour un confort supérieur pendant les longues sessions de travail.",
+        datasheet: "ergomax-pro-datasheet-fr.pdf",
       },
       ar: {
         name: "ErgoMax Pro",
-        description: "كرسي مكتب مريح متميز مع دعم قطني قابل للتعديل وظهر شبكي قابل للتنفس ومساند أذرع متعددة الأبعاد لراحة فائقة خلال جلسات العمل الطويلة.",
-        datasheet: "ergomax-pro-datasheet-ar.pdf"
-      }
+        description:
+          "كرسي مكتب مريح متميز مع دعم قطني قابل للتعديل وظهر شبكي قابل للتنفس ومساند أذرع متعددة الأبعاد لراحة فائقة خلال جلسات العمل الطويلة.",
+        datasheet: "ergomax-pro-datasheet-ar.pdf",
+      },
     });
 
     await seedProductTranslations(herman.id, {
       en: {
         name: "Herman Miller Aeron",
-        description: "Legendary office chair with patented PostureFit support, 8Z Pellicle suspension, and fully adjustable components engineered for optimal health and performance.",
-        datasheet: "herman-miller-aeron-datasheet-en.pdf"
+        description:
+          "Legendary office chair with patented PostureFit support, 8Z Pellicle suspension, and fully adjustable components engineered for optimal health and performance.",
+        datasheet: "herman-miller-aeron-datasheet-en.pdf",
       },
       fr: {
         name: "Herman Miller Aeron",
-        description: "Chaise de bureau légendaire avec support PostureFit breveté, suspension 8Z Pellicle et composants entièrement réglables conçus pour une santé et des performances optimales.",
-        datasheet: "herman-miller-aeron-datasheet-fr.pdf"
+        description:
+          "Chaise de bureau légendaire avec support PostureFit breveté, suspension 8Z Pellicle et composants entièrement réglables conçus pour une santé et des performances optimales.",
+        datasheet: "herman-miller-aeron-datasheet-fr.pdf",
       },
       ar: {
         name: "Herman Miller Aeron",
-        description: "كرسي مكتب أسطوري مع دعم PostureFit المحمي ببراءة اختراع ونظام تعليق 8Z Pellicle ومكونات قابلة للتعديل بالكامل مصممة للصحة والأداء الأمثل.",
-        datasheet: "herman-miller-aeron-datasheet-ar.pdf"
-      }
+        description:
+          "كرسي مكتب أسطوري مع دعم PostureFit المحمي ببراءة اختراع ونظام تعليق 8Z Pellicle ومكونات قابلة للتعديل بالكامل مصممة للصحة والأداء الأمثل.",
+        datasheet: "herman-miller-aeron-datasheet-ar.pdf",
+      },
     });
 
     console.log("✔ Products seeded with translations");
@@ -2347,109 +2546,127 @@ async function seedDatabase() {
     await seedCollectionTranslations(promotionsCollection.id, {
       en: {
         name: "Promotions",
-        description: "Special offers and discounted products with exclusive deals and limited-time savings on premium electronics and office furniture.",
-        slug: "promotions"
+        description:
+          "Special offers and discounted products with exclusive deals and limited-time savings on premium electronics and office furniture.",
+        slug: "promotions",
       },
       fr: {
         name: "Promotions",
-        description: "Offres spéciales et produits à prix réduit avec des offres exclusives et des économies limitées dans le temps sur les appareils électroniques et meubles de bureau premium.",
-        slug: "promotions"
+        description:
+          "Offres spéciales et produits à prix réduit avec des offres exclusives et des économies limitées dans le temps sur les appareils électroniques et meubles de bureau premium.",
+        slug: "promotions",
       },
       ar: {
         name: "العروض الترويجية",
-        description: "عروض خاصة ومنتجات مخفضة مع صفقات حصرية وتوفيرات محدودة الوقت على الإلكترونيات المتميزة وأثاث المكاتب.",
-        slug: "promotions-ar"
-      }
+        description:
+          "عروض خاصة ومنتجات مخفضة مع صفقات حصرية وتوفيرات محدودة الوقت على الإلكترونيات المتميزة وأثاث المكاتب.",
+        slug: "promotions-ar",
+      },
     });
 
     await seedCollectionTranslations(newArrivalsCollection.id, {
       en: {
         name: "New Arrivals",
-        description: "Recently added products to our store featuring the latest technology, newest designs, and cutting-edge innovations in electronics and office solutions.",
-        slug: "new-arrivals"
+        description:
+          "Recently added products to our store featuring the latest technology, newest designs, and cutting-edge innovations in electronics and office solutions.",
+        slug: "new-arrivals",
       },
       fr: {
         name: "Nouveautés",
-        description: "Produits récemment ajoutés à notre magasin présentant les dernières technologies, les designs les plus récents et les innovations de pointe en électronique et solutions de bureau.",
-        slug: "nouveautes"
+        description:
+          "Produits récemment ajoutés à notre magasin présentant les dernières technologies, les designs les plus récents et les innovations de pointe en électronique et solutions de bureau.",
+        slug: "nouveautes",
       },
       ar: {
         name: "الوافدون الجدد",
-        description: "منتجات تمت إضافتها مؤخرًا إلى متجرنا تعرض أحدث التقنيات والتصاميم الأحدث والابتكارات المتطورة في الإلكترونيات وحلول المكاتب.",
-        slug: "new-arrivals-ar"
-      }
+        description:
+          "منتجات تمت إضافتها مؤخرًا إلى متجرنا تعرض أحدث التقنيات والتصاميم الأحدث والابتكارات المتطورة في الإلكترونيات وحلول المكاتب.",
+        slug: "new-arrivals-ar",
+      },
     });
 
     await seedCollectionTranslations(premiumCollection.id, {
       en: {
         name: "Premium Products",
-        description: "High-end and luxury items designed for professionals who demand the best quality, performance, and craftsmanship in their workspace technology.",
-        slug: "premium-products"
+        description:
+          "High-end and luxury items designed for professionals who demand the best quality, performance, and craftsmanship in their workspace technology.",
+        slug: "premium-products",
       },
       fr: {
         name: "Produits Premium",
-        description: "Articles haut de gamme et de luxe conçus pour les professionnels qui exigent la meilleure qualité, performance et artisanat dans leur technologie d'espace de travail.",
-        slug: "produits-premium"
+        description:
+          "Articles haut de gamme et de luxe conçus pour les professionnels qui exigent la meilleure qualité, performance et artisanat dans leur technologie d'espace de travail.",
+        slug: "produits-premium",
       },
       ar: {
         name: "المنتجات المتميزة",
-        description: "منتجات راقية وفاخرة مصممة للمحترفين الذين يطالبون بأفضل جودة وأداء وحرفية في تقنية مساحة العمل الخاصة بهم.",
-        slug: "premium-products-ar"
-      }
+        description:
+          "منتجات راقية وفاخرة مصممة للمحترفين الذين يطالبون بأفضل جودة وأداء وحرفية في تقنية مساحة العمل الخاصة بهم.",
+        slug: "premium-products-ar",
+      },
     });
 
     await seedCollectionTranslations(gamingCollection.id, {
       en: {
         name: "Gaming Zone",
-        description: "Everything for gamers including powerful gaming laptops with high refresh rate displays, advanced cooling systems, and top-tier graphics cards for immersive gameplay.",
-        slug: "gaming-zone"
+        description:
+          "Everything for gamers including powerful gaming laptops with high refresh rate displays, advanced cooling systems, and top-tier graphics cards for immersive gameplay.",
+        slug: "gaming-zone",
       },
       fr: {
         name: "Zone Gaming",
-        description: "Tout pour les joueurs, y compris des ordinateurs portables de gaming puissants avec des écrans à taux de rafraîchissement élevé, des systèmes de refroidissement avancés et des cartes graphiques haut de gamme pour un gameplay immersif.",
-        slug: "zone-gaming"
+        description:
+          "Tout pour les joueurs, y compris des ordinateurs portables de gaming puissants avec des écrans à taux de rafraîchissement élevé, des systèmes de refroidissement avancés et des cartes graphiques haut de gamme pour un gameplay immersif.",
+        slug: "zone-gaming",
       },
       ar: {
         name: "منطقة الألعاب",
-        description: "كل شيء للاعبين بما في ذلك أجهزة كمبيوتر محمولة قوية للألعاب مع شاشات عرض بمعدل تحديث عالي وأنظمة تبريد متقدمة وبطاقات رسومات من الدرجة الأولى لتجربة ألعاب غامرة.",
-        slug: "gaming-zone-ar"
-      }
+        description:
+          "كل شيء للاعبين بما في ذلك أجهزة كمبيوتر محمولة قوية للألعاب مع شاشات عرض بمعدل تحديث عالي وأنظمة تبريد متقدمة وبطاقات رسومات من الدرجة الأولى لتجربة ألعاب غامرة.",
+        slug: "gaming-zone-ar",
+      },
     });
 
     await seedCollectionTranslations(workFromHomeCollection.id, {
       en: {
         name: "Work From Home Essentials",
-        description: "Perfect setup for remote work with business laptops, ergonomic chairs, and productivity tools designed to create an efficient and comfortable home office environment.",
-        slug: "work-from-home"
+        description:
+          "Perfect setup for remote work with business laptops, ergonomic chairs, and productivity tools designed to create an efficient and comfortable home office environment.",
+        slug: "work-from-home",
       },
       fr: {
         name: "Essentiels du Télétravail",
-        description: "Configuration parfaite pour le travail à distance avec des ordinateurs portables professionnels, des chaises ergonomiques et des outils de productivité conçus pour créer un environnement de bureau à domicile efficace et confortable.",
-        slug: "teletravail"
+        description:
+          "Configuration parfaite pour le travail à distance avec des ordinateurs portables professionnels, des chaises ergonomiques et des outils de productivité conçus pour créer un environnement de bureau à domicile efficace et confortable.",
+        slug: "teletravail",
       },
       ar: {
         name: "أساسيات العمل من المنزل",
-        description: "إعداد مثالي للعمل عن بُعد مع أجهزة كمبيوتر محمولة للأعمال وكراسي مريحة وأدوات إنتاجية مصممة لإنشاء بيئة مكتب منزلي فعالة ومريحة.",
-        slug: "work-from-home-ar"
-      }
+        description:
+          "إعداد مثالي للعمل عن بُعد مع أجهزة كمبيوتر محمولة للأعمال وكراسي مريحة وأدوات إنتاجية مصممة لإنشاء بيئة مكتب منزلي فعالة ومريحة.",
+        slug: "work-from-home-ar",
+      },
     });
 
     await seedCollectionTranslations(mobilityCollection.id, {
       en: {
         name: "Mobile Productivity",
-        description: "Portable devices for on-the-go professionals including lightweight tablets, ultra-portable laptops, and mobile accessories that keep you productive anywhere.",
-        slug: "mobile-productivity"
+        description:
+          "Portable devices for on-the-go professionals including lightweight tablets, ultra-portable laptops, and mobile accessories that keep you productive anywhere.",
+        slug: "mobile-productivity",
       },
       fr: {
         name: "Productivité Mobile",
-        description: "Appareils portables pour les professionnels en déplacement, y compris des tablettes légères, des ordinateurs portables ultra-portables et des accessoires mobiles qui vous maintiennent productif partout.",
-        slug: "productivite-mobile"
+        description:
+          "Appareils portables pour les professionnels en déplacement, y compris des tablettes légères, des ordinateurs portables ultra-portables et des accessoires mobiles qui vous maintiennent productif partout.",
+        slug: "productivite-mobile",
       },
       ar: {
         name: "الإنتاجية المتنقلة",
-        description: "أجهزة محمولة للمحترفين أثناء التنقل بما في ذلك أجهزة لوحية خفيفة الوزن وأجهزة كمبيوتر محمولة فائقة الحمل وملحقات متنقلة تبقيك منتجًا في أي مكان.",
-        slug: "mobile-productivity-ar"
-      }
+        description:
+          "أجهزة محمولة للمحترفين أثناء التنقل بما في ذلك أجهزة لوحية خفيفة الوزن وأجهزة كمبيوتر محمولة فائقة الحمل وملحقات متنقلة تبقيك منتجًا في أي مكان.",
+        slug: "mobile-productivity-ar",
+      },
     });
 
     console.log("✔ Collections seeded with translations");

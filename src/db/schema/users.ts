@@ -1,6 +1,11 @@
 import { pgEnum, pgTable, timestamp, uuid, varchar } from "drizzle-orm/pg-core";
 
-export const userRoleEnum = pgEnum("user_role", ["admin", "support"]);
+export const userRoleEnum = pgEnum("user_role", [
+  "admin",
+  "support",
+  "customer",
+  "business-customer",
+]);
 
 export const user = pgTable("user", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -10,6 +15,8 @@ export const user = pgTable("user", {
 
   name: varchar("name", { length: 255 }).notNull(),
   role: userRoleEnum("role").default("admin").notNull(),
-
+  address: varchar("address", { length: 500 }),
+  phone: varchar("phone", { length: 20 }).notNull().default(""),
+  matriculeFiscale: varchar("matriculeFiscale", { length: 100 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
