@@ -260,7 +260,12 @@ export class ProductService {
       const direction = sort === "asc" ? asc : desc;
       switch (sortBy) {
         case "name":
-          orderBy = direction(productTranslations.name);
+          // Use COALESCE expression for translated name field
+          orderBy = direction(sql`COALESCE(
+            pt_requested.name,
+            pt_fallback.name,
+            ${products.name}
+          )`);
           break;
         case "price":
           orderBy = direction(products.price);
