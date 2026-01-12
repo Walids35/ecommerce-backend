@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import { errorHandler } from './middlewares/errorHandler';
 import { notFound } from './middlewares/notFound';
 import authRoutes from './modules/auth/auth.routes';
+import userRoutes from './modules/user/user.route';
 import categoryRoutes from './modules/categories/category.routes';
 import subCategoryRoutes from './modules/subcategory/subcategory.routes';
 import subSubCategoryRoutes from './modules/subsubcategory/subsubcategory.routes';
@@ -17,7 +18,7 @@ import collectionRoutes from './modules/collection/collection.routes';
 import brandRoutes from './modules/brand/brand.routes';
 import { seedDatabase } from './db/database-seeding';
 import cookieParser from 'cookie-parser';
-import { verifyJWT } from "./middlewares/auth";
+import { verifyJWT, requireStaff } from "./middlewares/auth";
 import { detectLanguage } from './middlewares/language';
 
 dotenv.config();
@@ -43,8 +44,9 @@ app.use(detectLanguage);
 
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/users', userRoutes); // User management routes (auth handled inside)
 app.use('/api/checkout', checkoutRoutes);
-app.use('/api/orders', verifyJWT, orderRoutes);
+app.use('/api/orders', orderRoutes); // Routes handle their own auth (customer + staff)
 app.use("/api/categories", categoryRoutes)
 app.use("/api/subcategories", subCategoryRoutes);
 app.use("/api/subsubcategories", subSubCategoryRoutes);
@@ -52,8 +54,8 @@ app.use('/api/attributes', attributeRoutes);
 app.use("/api/products", productRoutes);
 app.use('/api/brands', brandRoutes);
 app.use('/api/collections', collectionRoutes);
-app.use('/api/file-upload', verifyJWT, fileUploadRoutes);
-app.use('/api/analytics', verifyJWT, analyticsRoutes);
+app.use('/api/file-upload', verifyJWT, requireStaff, fileUploadRoutes); // Admin/staff only
+app.use('/api/analytics', verifyJWT, requireStaff, analyticsRoutes); // Admin/staff only
 
 app.get('/health', (req, res) => {
   res.json({ status: 'OK', message: 'Server is running' })
@@ -64,11 +66,4 @@ app.use(errorHandler);
 
 app.listen(PORT, async () => {
   console.log(`Server running on port ${PORT}`);
-  
-  try {
-    await seedDatabase();
-    console.log('Database seeding completed');
-  } catch (error) {
-    console.error('Database seeding failed:', error)
-  }
 });

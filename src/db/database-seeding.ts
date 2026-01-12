@@ -287,16 +287,16 @@ async function seedDatabase() {
     // -------------------------------
     // ADMIN USER
     // -------------------------------
-    const existingAdmin = await db
+    let adminUser = await db
       .select()
       .from(user)
       .where(eq(user.email, "admin@gmail.com"))
       .limit(1);
 
-    if (existingAdmin.length === 0) {
+    if (adminUser.length === 0) {
       const hashedPassword = await bcrypt.hash("admin2025", 10);
 
-      await db.insert(user).values({
+      adminUser = await db.insert(user).values({
         email: "admin@gmail.com",
         password: hashedPassword,
         name: "System Admin",
@@ -304,12 +304,14 @@ async function seedDatabase() {
         address: "123 Admin St, Admin City, Admin Country",
         phone: "+1234567890",
         matriculeFiscale: "123456789",
-      });
+      }).returning();
 
       console.log("✔ Admin user seeded");
     } else {
       console.log("ℹ Admin user already exists");
     }
+
+    const adminUserId = adminUser[0].id;
 
     // -------------------------------
     // CATEGORIES
@@ -1713,9 +1715,7 @@ async function seedDatabase() {
     // -------------------------------
     async function seedOrder(
       orderNumber: string,
-      customerName: string,
-      customerEmail: string,
-      customerPhone: string,
+      userId: string,
       city: string,
       postalCode: string,
       streetAddress: string,
@@ -1747,9 +1747,7 @@ async function seedDatabase() {
           .insert(orders)
           .values({
             orderNumber,
-            customerName,
-            customerEmail,
-            customerPhone,
+            userId,
             city,
             postalCode,
             streetAddress,
@@ -1769,9 +1767,7 @@ async function seedDatabase() {
     // Create sample orders
     const order1 = await seedOrder(
       "ORD-2025-0001",
-      "John Smith",
-      "john.smith@example.com",
-      "+1234567890",
+      adminUserId,
       "Tunis",
       "1000",
       "123 Avenue Habib Bourguiba",
@@ -1787,9 +1783,7 @@ async function seedDatabase() {
 
     const order2 = await seedOrder(
       "ORD-2025-0002",
-      "Jane Doe",
-      "jane.doe@example.com",
-      "+1987654321",
+      adminUserId,
       "Sfax",
       "3000",
       "456 Rue de la République",
@@ -1804,9 +1798,7 @@ async function seedDatabase() {
 
     const order3 = await seedOrder(
       "ORD-2025-0003",
-      "Ahmed Ben Ali",
-      "ahmed.benali@example.com",
-      "+21612345678",
+      adminUserId,
       "Sousse",
       "4000",
       "789 Avenue Mohamed V",
@@ -1821,9 +1813,7 @@ async function seedDatabase() {
 
     const order4 = await seedOrder(
       "ORD-2025-0004",
-      "Sarah Johnson",
-      "sarah.j@example.com",
-      "+1122334455",
+      adminUserId,
       "Ariana",
       "2080",
       "321 Rue des Jasmins",
@@ -1839,9 +1829,7 @@ async function seedDatabase() {
 
     const order5 = await seedOrder(
       "ORD-2025-0005",
-      "Mohamed Trabelsi",
-      "mohamed.trabelsi@example.com",
-      "+21698765432",
+      adminUserId,
       "Monastir",
       "5000",
       "15 Avenue de la Liberté",
@@ -1856,9 +1844,7 @@ async function seedDatabase() {
 
     const order6 = await seedOrder(
       "ORD-2025-0006",
-      "Fatma Ben Salem",
-      "fatma.bensalem@example.com",
-      "+21620987654",
+      adminUserId,
       "Bizerte",
       "7000",
       "88 Rue de la Corniche",
@@ -1873,9 +1859,7 @@ async function seedDatabase() {
 
     const order7 = await seedOrder(
       "ORD-2025-0007",
-      "David Wilson",
-      "david.wilson@example.com",
-      "+1555666777",
+      adminUserId,
       "Tunis",
       "1002",
       "42 Avenue de France",
@@ -1891,9 +1875,7 @@ async function seedDatabase() {
 
     const order8 = await seedOrder(
       "ORD-2025-0008",
-      "Leila Gharbi",
-      "leila.gharbi@example.com",
-      "+21655443322",
+      adminUserId,
       "Nabeul",
       "8000",
       "67 Avenue Habib Thameur",
@@ -1909,9 +1891,7 @@ async function seedDatabase() {
 
     const order9 = await seedOrder(
       "ORD-2025-0009",
-      "Robert Martinez",
-      "robert.m@example.com",
-      "+1888999000",
+      adminUserId,
       "Sousse",
       "4002",
       "23 Rue Hedi Chaker",
@@ -1926,9 +1906,7 @@ async function seedDatabase() {
 
     const order10 = await seedOrder(
       "ORD-2025-0010",
-      "Amira Kacem",
-      "amira.kacem@example.com",
-      "+21697531864",
+      adminUserId,
       "Sfax",
       "3018",
       "156 Avenue Ali Belhouane",
@@ -1943,9 +1921,7 @@ async function seedDatabase() {
 
     const order11 = await seedOrder(
       "ORD-2025-0011",
-      "Thomas Anderson",
-      "t.anderson@example.com",
-      "+1333444555",
+      adminUserId,
       "La Marsa",
       "2070",
       "99 Avenue Taieb Mhiri",
@@ -1961,9 +1937,7 @@ async function seedDatabase() {
 
     const order12 = await seedOrder(
       "ORD-2025-0012",
-      "Salma Messaoudi",
-      "salma.messaoudi@example.com",
-      "+21623456789",
+      adminUserId,
       "Gabes",
       "6000",
       "34 Rue de la République",
@@ -1979,9 +1953,7 @@ async function seedDatabase() {
 
     const order13 = await seedOrder(
       "ORD-2025-0013",
-      "Michael Chen",
-      "m.chen@example.com",
-      "+1777888999",
+      adminUserId,
       "Hammamet",
       "8050",
       "12 Avenue de la Paix",
@@ -1996,9 +1968,7 @@ async function seedDatabase() {
 
     const order14 = await seedOrder(
       "ORD-2025-0014",
-      "Nadia Jlassi",
-      "nadia.jlassi@example.com",
-      "+21641852963",
+      adminUserId,
       "Kairouan",
       "3100",
       "78 Avenue Ibn El Jazzar",

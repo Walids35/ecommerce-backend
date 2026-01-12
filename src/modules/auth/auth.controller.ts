@@ -42,6 +42,100 @@ export const login = async (req: Request, res: Response) => {
   );
 };
 
+/**
+ * Staff login - Only allows admin and support roles
+ */
+export const loginStaff = async (req: Request, res: Response) => {
+  const validationResult = await loginSchema.safeParse(req.body);
+
+  if (!validationResult.success) {
+    throw new ValidationError(
+      "Validation failed",
+      validationResult.error.issues
+    );
+  }
+
+  const { email, password } = validationResult.data;
+
+  const user = await authenticateUser({ email, password });
+
+  // Check if user has staff role
+  if (user.role !== "admin" && user.role !== "support") {
+    throw new UnauthorizedError(
+      "Access denied. This login is only for staff members."
+    );
+  }
+
+  const token = signToken({
+    id: user.id,
+    email: user.email,
+    role: user.role,
+    name: user.name,
+  });
+
+  cookies.set(res, "token", token);
+
+  sendSuccess(
+    res,
+    {
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      },
+    },
+    "Staff signed in successfully"
+  );
+};
+
+/**
+ * Client login - Only allows customer and business-customer roles
+ */
+export const loginClient = async (req: Request, res: Response) => {
+  const validationResult = await loginSchema.safeParse(req.body);
+
+  if (!validationResult.success) {
+    throw new ValidationError(
+      "Validation failed",
+      validationResult.error.issues
+    );
+  }
+
+  const { email, password } = validationResult.data;
+
+  const user = await authenticateUser({ email, password });
+
+  // Check if user has client role
+  if (user.role !== "customer" && user.role !== "business-customer") {
+    throw new UnauthorizedError(
+      "Access denied. This login is only for customers."
+    );
+  }
+
+  const token = signToken({
+    id: user.id,
+    email: user.email,
+    role: user.role,
+    name: user.name,
+  });
+
+  cookies.set(res, "token", token);
+
+  sendSuccess(
+    res,
+    {
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      },
+    },
+    "Customer signed in successfully"
+  );
+};
+
 export const signOut = async (req: Request, res: Response) => {
   cookies.clear(res, "token");
   sendSuccess(res, null, "User signed out successfully");
@@ -57,7 +151,7 @@ export const register = async (req: Request, res: Response) => {
     );
   }
 
-  const { name, email, password, address, phone, matriculeFiscale } =
+  const { name, email, password, address, phone, matriculeFiscale, role } =
     validationResult.data;
 
   const user = await createUser({
@@ -67,6 +161,7 @@ export const register = async (req: Request, res: Response) => {
     address,
     phone,
     matriculeFiscale,
+    role: role || "customer",
   });
 
   const token = signToken({

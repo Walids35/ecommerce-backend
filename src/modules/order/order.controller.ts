@@ -1,16 +1,13 @@
-import { Request, Response } from "express";
+import { Response } from "express";
 import { OrderService } from "./order.service";
 import {
   UpdateOrderStatusInput,
   UpdatePaymentStatusInput,
 } from "./dto/order.dto";
 import { sendSuccess, sendPaginated } from "../../utils/response";
+import { AuthRequest } from "../../middlewares/auth";
 
 const service = new OrderService();
-
-interface AuthRequest extends Request {
-  user?: { id: string; email: string; role: string };
-}
 
 export class OrderController {
   async listOrders(req: AuthRequest, res: Response) {
@@ -66,5 +63,30 @@ export class OrderController {
     const orderId = Number(req.params.id);
     await service.deleteOrder(orderId);
     sendSuccess(res, null, "Order deleted successfully");
+  }
+
+  /**
+   * Get authenticated user's own orders (customer order history)
+   */
+  async getMyOrders(req: AuthRequest, res: Response) {
+    const userId = req.user!.id;
+
+    const result = await service.getOrdersByUserId(userId, {
+      status: req.query.status as string,
+      page: req.query.page ? Number(req.query.page) : 1,
+      limit: req.query.limit ? Number(req.query.limit) : 10,
+      sort: req.query.sort as string,
+    });
+
+    sendPaginated(
+      res,
+      result.orders,
+      {
+        page: result.page,
+        limit: result.limit,
+        total: result.total,
+      },
+      "Your orders retrieved successfully"
+    );
   }
 }

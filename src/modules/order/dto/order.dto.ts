@@ -11,11 +11,6 @@ const orderStatusSchema = z.enum([
 ]);
 
 export const CreateOrderInput = z.object({
-  // Customer info
-  customerName: z.string().min(1).max(255),
-  customerEmail: z.string().email().max(255),
-  customerPhone: z.string().min(1).max(50),
-
   // Shipping address
   city: z.string().min(1).max(100),
   postalCode: z.string().min(1).max(20),

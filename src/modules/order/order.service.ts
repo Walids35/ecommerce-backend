@@ -7,6 +7,7 @@ import {
   orderItems,
   orderStatusHistory,
 } from "../../db/schema/orders";
+import { user } from "../../db/schema/users";
 import crypto from "crypto";
 import { NotFoundError, BadRequestError } from "../../utils/errors";
 import { MailingService } from "../mailing/mailing.service";
@@ -171,7 +172,7 @@ export class OrderService {
   }
 
   // Main: Create order (checkout)
-  async createOrder(data: CreateOrderInputType) {
+  async createOrder(data: CreateOrderInputType, userId?: string) {
     // 1. Validate calculations
     const { products: productList } = await this.validateOrderCalculations(
       data.items,
@@ -198,9 +199,7 @@ export class OrderService {
         .insert(orders)
         .values({
           orderNumber,
-          customerName: data.customerName,
-          customerEmail: data.customerEmail,
-          customerPhone: data.customerPhone,
+          userId: userId!, // Non-null assertion since checkout now requires auth
           city: data.city,
           postalCode: data.postalCode,
           streetAddress: data.streetAddress,
@@ -262,29 +261,42 @@ export class OrderService {
 
   // Get order by order number (public)
   async getOrderByOrderNumber(orderNumber: string) {
-    const [order] = await db
-      .select()
+    const [orderWithUser] = await db
+      .select({
+        order: orders,
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          phone: user.phone,
+        },
+      })
       .from(orders)
+      .leftJoin(user, eq(orders.userId, user.id))
       .where(eq(orders.orderNumber, orderNumber))
       .limit(1);
 
-    if (!order) throw new NotFoundError("Order not found");
+    if (!orderWithUser) throw new NotFoundError("Order not found");
 
     // Fetch items
     const items = await db
       .select()
       .from(orderItems)
-      .where(eq(orderItems.orderId, order.id));
+      .where(eq(orderItems.orderId, orderWithUser.order.id));
 
     // Fetch status history
     const history = await db
       .select()
       .from(orderStatusHistory)
-      .where(eq(orderStatusHistory.orderId, order.id))
+      .where(eq(orderStatusHistory.orderId, orderWithUser.order.id))
       .orderBy(asc(orderStatusHistory.createdAt));
 
+    // Transform response to include customer info from user table
     return {
-      ...order,
+      ...orderWithUser.order,
+      customerName: orderWithUser.user?.name || "N/A",
+      customerEmail: orderWithUser.user?.email || "N/A",
+      customerPhone: orderWithUser.user?.phone || "N/A",
       items,
       statusHistory: history,
     };
@@ -318,7 +330,7 @@ export class OrderService {
     }
 
     if (customerEmail) {
-      whereClause.push(ilike(orders.customerEmail, `%${customerEmail}%`));
+      whereClause.push(ilike(user.email, `%${customerEmail}%`));
     }
 
     // Search across multiple fields
@@ -327,9 +339,9 @@ export class OrderService {
       whereClause.push(
         or(
           ilike(orders.orderNumber, searchPattern),
-          ilike(orders.customerName, searchPattern),
-          ilike(orders.customerEmail, searchPattern),
-          ilike(orders.customerPhone, searchPattern),
+          ilike(user.name, searchPattern),
+          ilike(user.email, searchPattern),
+          ilike(user.phone, searchPattern),
           ilike(orders.city, searchPattern)
         )
       );
@@ -344,10 +356,10 @@ export class OrderService {
           orderBy = direction(orders.orderNumber);
           break;
         case "customerName":
-          orderBy = direction(orders.customerName);
+          orderBy = direction(user.name);
           break;
         case "customerEmail":
-          orderBy = direction(orders.customerEmail);
+          orderBy = direction(user.email);
           break;
         case "status":
           orderBy = direction(orders.status);
@@ -380,8 +392,17 @@ export class OrderService {
     }
 
     const rows = await db
-      .select()
+      .select({
+        order: orders,
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          phone: user.phone,
+        },
+      })
       .from(orders)
+      .leftJoin(user, eq(orders.userId, user.id))
       .where(whereClause.length ? and(...whereClause) : undefined)
       .orderBy(orderBy)
       .limit(limit)
@@ -390,25 +411,43 @@ export class OrderService {
     const [{ count }] = await db
       .select({ count: sql<number>`COUNT(*)` })
       .from(orders)
+      .leftJoin(user, eq(orders.userId, user.id))
       .where(whereClause.length ? and(...whereClause) : undefined);
+
+    // Transform each order to include customer info
+    const transformedOrders = rows.map((row) => ({
+      ...row.order,
+      customerName: row.user?.name || "N/A",
+      customerEmail: row.user?.email || "N/A",
+      customerPhone: row.user?.phone || "N/A",
+    }));
 
     return {
       page,
       limit,
       total: Number(count),
-      orders: rows,
+      orders: transformedOrders,
     };
   }
 
   // Get order by ID (admin)
   async getOrderById(id: number) {
-    const [order] = await db
-      .select()
+    const [orderWithUser] = await db
+      .select({
+        order: orders,
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          phone: user.phone,
+        },
+      })
       .from(orders)
+      .leftJoin(user, eq(orders.userId, user.id))
       .where(eq(orders.id, id))
       .limit(1);
 
-    if (!order) throw new NotFoundError("Order not found");
+    if (!orderWithUser) throw new NotFoundError("Order not found");
 
     const items = await db
       .select()
@@ -421,21 +460,37 @@ export class OrderService {
       .where(eq(orderStatusHistory.orderId, id))
       .orderBy(asc(orderStatusHistory.createdAt));
 
-    return { ...order, items, statusHistory: history };
+    // Transform response to include customer info from user table
+    return {
+      ...orderWithUser.order,
+      customerName: orderWithUser.user?.name || "N/A",
+      customerEmail: orderWithUser.user?.email || "N/A",
+      customerPhone: orderWithUser.user?.phone || "N/A",
+      items,
+      statusHistory: history,
+    };
   }
 
   // Update order status (admin) - with automatic history
   async updateOrderStatus(orderId: number, newStatus: string, changedBy: string) {
     return await db.transaction(async (tx) => {
-      // Get current order
-      const [currentOrder] = await tx
-        .select()
+      // Get current order with user data
+      const [orderWithUser] = await tx
+        .select({
+          order: orders,
+          user: {
+            name: user.name,
+            email: user.email,
+          },
+        })
         .from(orders)
+        .leftJoin(user, eq(orders.userId, user.id))
         .where(eq(orders.id, orderId))
         .limit(1);
 
-      if (!currentOrder) throw new NotFoundError("Order not found");
+      if (!orderWithUser) throw new NotFoundError("Order not found");
 
+      const currentOrder = orderWithUser.order;
       const oldStatus = currentOrder.status;
       const paymentMethod = currentOrder.paymentMethod;
 
@@ -501,11 +556,11 @@ export class OrderService {
         changedBy,
       });
 
-      // Send status update email (non-blocking, fire-and-forget)
+      // Send status update email with user data (non-blocking, fire-and-forget)
       this.mailingService.sendOrderStatusUpdate({
         orderNumber: currentOrder.orderNumber,
-        customerName: currentOrder.customerName,
-        customerEmail: currentOrder.customerEmail,
+        customerName: orderWithUser.user?.name || "Customer",
+        customerEmail: orderWithUser.user?.email || "",
         oldStatus,
         newStatus,
         statusMessage: this.mailingService.getStatusMessage(newStatus),
@@ -543,5 +598,78 @@ export class OrderService {
       .returning();
 
     if (!deleted) throw new NotFoundError("Order not found");
+  }
+
+  /**
+   * Get all orders for a specific user (customer order history)
+   */
+  async getOrdersByUserId(
+    userId: string,
+    query: {
+      status?: string;
+      page?: number;
+      limit?: number;
+      sort?: string;
+    }
+  ) {
+    const {
+      status,
+      page = 1,
+      limit = 10,
+      sort = "newest",
+    } = query;
+    const offset = (page - 1) * limit;
+
+    let whereClause: any[] = [eq(orders.userId, userId)];
+
+    if (status) {
+      whereClause.push(eq(orders.status, status as any));
+    }
+
+    const orderBy =
+      sort === "oldest"
+        ? asc(orders.createdAt)
+        : sort === "price_high"
+        ? desc(orders.totalPrice)
+        : sort === "price_low"
+        ? asc(orders.totalPrice)
+        : desc(orders.createdAt);
+
+    const rows = await db
+      .select({
+        order: orders,
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          phone: user.phone,
+        },
+      })
+      .from(orders)
+      .leftJoin(user, eq(orders.userId, user.id))
+      .where(and(...whereClause))
+      .orderBy(orderBy)
+      .limit(limit)
+      .offset(offset);
+
+    const [{ count }] = await db
+      .select({ count: sql<number>`COUNT(*)` })
+      .from(orders)
+      .where(and(...whereClause));
+
+    // Transform each order to include customer info
+    const transformedOrders = rows.map((row) => ({
+      ...row.order,
+      customerName: row.user?.name || "N/A",
+      customerEmail: row.user?.email || "N/A",
+      customerPhone: row.user?.phone || "N/A",
+    }));
+
+    return {
+      page,
+      limit,
+      total: Number(count),
+      orders: transformedOrders,
+    };
   }
 }

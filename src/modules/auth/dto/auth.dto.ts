@@ -12,4 +12,5 @@ export const registerSchema = z.object({
   address: z.string().min(1, "Address is required"),
   phone: z.string().min(1, "Phone number is required"),
   matriculeFiscale: z.string().optional(),
+  role: z.enum(["customer", "business-customer"]).default("customer").optional(),
 });

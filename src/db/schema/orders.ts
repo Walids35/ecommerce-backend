@@ -13,6 +13,7 @@ import {
   varchar,
 } from "drizzle-orm/pg-core";
 import { products } from "./product";
+import { user } from "./users";
 
 // Enums
 export const orderStatusEnum = pgEnum("order_status", [
@@ -37,10 +38,12 @@ export const orders = pgTable("orders", {
   // Unique order identifier (customer-facing)
   orderNumber: varchar("order_number", { length: 20 }).notNull().unique(),
 
-  // Customer information (no user FK - anonymous checkout)
-  customerName: varchar("customer_name", { length: 255 }).notNull(),
-  customerEmail: varchar("customer_email", { length: 255 }).notNull(),
-  customerPhone: varchar("customer_phone", { length: 50 }).notNull(),
+  // Required link to user account (guest checkout disabled)
+  userId: uuid("user_id")
+    .references(() => user.id, { onDelete: "cascade" })
+    .notNull(),
+
+  // Customer information fetched from user relation
 
   // Shipping address
   city: varchar("city", { length: 100 }).notNull(),
@@ -104,9 +107,13 @@ export const orderStatusHistory = pgTable("order_status_history", {
 });
 
 // Relations
-export const ordersRelations = relations(orders, ({ many }) => ({
+export const ordersRelations = relations(orders, ({ one, many }) => ({
   items: many(orderItems),
   statusHistory: many(orderStatusHistory),
+  user: one(user, {
+    fields: [orders.userId],
+    references: [user.id],
+  }),
 }));
 
 export const orderItemsRelations = relations(orderItems, ({ one }) => ({
