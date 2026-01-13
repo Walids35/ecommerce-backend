@@ -172,7 +172,7 @@ export class OrderService {
   }
 
   // Main: Create order (checkout)
-  async createOrder(data: CreateOrderInputType, userId?: string) {
+  async createOrder(data: CreateOrderInputType, userId?: string, createdBy: string = "customer") {
     // 1. Validate calculations
     const { products: productList } = await this.validateOrderCalculations(
       data.items,
@@ -183,10 +183,10 @@ export class OrderService {
     await this.validateStock(data.items);
 
     // 3. Calculate total
+    // Note: Product prices already include taxes, so taxAmount is for display only
     const totalPrice = (
       parseFloat(data.subtotal) +
-      parseFloat(data.shippingCost) +
-      parseFloat(data.taxAmount)
+      parseFloat(data.shippingCost)
     ).toFixed(2);
 
     // 4. Generate order number
@@ -243,7 +243,7 @@ export class OrderService {
         orderId: order.id,
         oldStatus: null,
         newStatus: "pending",
-        changedBy: "customer",
+        changedBy: createdBy,
       });
 
       // Fetch items for email

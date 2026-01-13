@@ -22,9 +22,10 @@ export const CreateOrderInput = z.object({
   // Pricing (client provides, server validates)
   // All prices must be strings in decimal format with up to 2 decimal places
   // Examples: "10.00", "99.99", "0.50", "100"
+  // Note: Product prices already include taxes
   subtotal: z.string().regex(/^\d+(\.\d{1,2})?$/, "Subtotal must be a valid decimal number (e.g., '10.00')"),
   shippingCost: z.string().regex(/^\d+(\.\d{1,2})?$/, "Shipping cost must be a valid decimal number (e.g., '5.00')"),
-  taxAmount: z.string().regex(/^\d+(\.\d{1,2})?$/, "Tax amount must be a valid decimal number (e.g., '2.50')"),
+  taxAmount: z.string().regex(/^\d+(\.\d{1,2})?$/, "Tax amount must be a valid decimal number (e.g., '2.50')"), // For display only, not added to total
 
   // Items
   items: z
