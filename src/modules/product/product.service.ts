@@ -98,6 +98,9 @@ export class ProductService {
         displayOrder: data.displayOrder ?? 0,
         subcategoryOrder: data.subcategoryOrder ?? data.displayOrder ?? 0,
         subsubcategoryOrder: data.subsubcategoryOrder ?? data.displayOrder ?? 0,
+        guarantee: data.guarantee ?? 0,
+        estimatedDeliveryMaxDays: data.estimatedDeliveryMaxDays ?? 7,
+        disponibility: data.disponibility ?? "available",
       })
       .returning();
 
@@ -344,6 +347,9 @@ export class ProductService {
         displayOrder: products.displayOrder,
         subcategoryOrder: products.subcategoryOrder,
         subsubcategoryOrder: products.subsubcategoryOrder,
+        guarantee: products.guarantee,
+        estimatedDeliveryMaxDays: products.estimatedDeliveryMaxDays,
+        disponibility: products.disponibility,
         createdAt: products.createdAt,
         updatedAt: products.updatedAt,
         // Translated fields with fallback
@@ -484,6 +490,9 @@ export class ProductService {
         displayOrder: products.displayOrder,
         subcategoryOrder: products.subcategoryOrder,
         subsubcategoryOrder: products.subsubcategoryOrder,
+        guarantee: products.guarantee,
+        estimatedDeliveryMaxDays: products.estimatedDeliveryMaxDays,
+        disponibility: products.disponibility,
         createdAt: products.createdAt,
         updatedAt: products.updatedAt,
         // Translated fields
@@ -522,6 +531,9 @@ export class ProductService {
         displayOrder: products.displayOrder,
         subcategoryOrder: products.subcategoryOrder,
         subsubcategoryOrder: products.subsubcategoryOrder,
+        guarantee: products.guarantee,
+        estimatedDeliveryMaxDays: products.estimatedDeliveryMaxDays,
+        disponibility: products.disponibility,
         createdAt: products.createdAt,
         updatedAt: products.updatedAt,
         // Translated fields
@@ -638,6 +650,11 @@ export class ProductService {
     if (data.subsubcategoryOrder !== undefined)
       payload.subsubcategoryOrder = data.subsubcategoryOrder;
     if (data.brandId !== undefined) payload.brandId = data.brandId;
+    if (data.guarantee !== undefined) payload.guarantee = data.guarantee;
+    if (data.estimatedDeliveryMaxDays !== undefined)
+      payload.estimatedDeliveryMaxDays = data.estimatedDeliveryMaxDays;
+    if (data.disponibility !== undefined)
+      payload.disponibility = data.disponibility;
 
     const [updated] = await db
       .update(products)
@@ -835,6 +852,9 @@ export class ProductService {
         displayOrder: products.displayOrder,
         subcategoryOrder: products.subcategoryOrder,
         subsubcategoryOrder: products.subsubcategoryOrder,
+        guarantee: products.guarantee,
+        estimatedDeliveryMaxDays: products.estimatedDeliveryMaxDays,
+        disponibility: products.disponibility,
         createdAt: products.createdAt,
         updatedAt: products.updatedAt,
         // Translated fields
@@ -1026,6 +1046,9 @@ export class ProductService {
         displayOrder: products.displayOrder,
         subcategoryOrder: products.subcategoryOrder,
         subsubcategoryOrder: products.subsubcategoryOrder,
+        guarantee: products.guarantee,
+        estimatedDeliveryMaxDays: products.estimatedDeliveryMaxDays,
+        disponibility: products.disponibility,
         createdAt: products.createdAt,
         updatedAt: products.updatedAt,
         // Translated fields

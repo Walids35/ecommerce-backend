@@ -7,6 +7,9 @@ const ProductTranslationSchema = z.object({
   datasheet: z.string().optional(),
 });
 
+// Product availability enum schema
+const disponibilitySchema = z.enum(["available", "on_request", "out_of_stock"]);
+
 export const CreateProductInput = z.object({
   name: z.string().min(1),
   description: z.string().optional(),
@@ -26,6 +29,11 @@ export const CreateProductInput = z.object({
   displayOrder: z.number().int().optional(),
   subcategoryOrder: z.number().int().nonnegative().optional(),
   subsubcategoryOrder: z.number().int().nonnegative().optional(),
+
+  // New product fields
+  guarantee: z.number().int().nonnegative().optional().default(0),
+  estimatedDeliveryMaxDays: z.number().int().positive().optional().default(7),
+  disponibility: disponibilitySchema.optional().default("available"),
 
   attributes: z
     .array(
@@ -63,6 +71,11 @@ export const UpdateProductInput = z.object({
   subcategoryOrder: z.number().int().nonnegative().optional(),
   subsubcategoryOrder: z.number().int().nonnegative().optional(),
   brandId: z.number().int().positive().optional(),
+
+  // New product fields
+  guarantee: z.number().int().nonnegative().optional(),
+  estimatedDeliveryMaxDays: z.number().int().positive().optional(),
+  disponibility: disponibilitySchema.optional(),
 
   attributes: z
     .array(

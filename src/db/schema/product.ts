@@ -1,9 +1,16 @@
 import { relations, sql } from "drizzle-orm";
-import { bigint, bigserial, boolean, integer, numeric, pgTable, text, timestamp, uuid, varchar, check } from "drizzle-orm/pg-core";
+import { bigint, bigserial, boolean, integer, numeric, pgEnum, pgTable, text, timestamp, uuid, varchar, check } from "drizzle-orm/pg-core";
 import { subCategories, attributes, attributeValues } from "./subcategories";
 import { subSubCategories } from "./subsubcategories";
 import { productCollections } from "./collections";
 import { brands } from "./brands";
+
+// Product availability enum
+export const disponibilityEnum = pgEnum("disponibility", [
+  "available",
+  "on_request",
+  "out_of_stock",
+]);
 
 export const products = pgTable(
   "products",
@@ -32,6 +39,12 @@ export const products = pgTable(
     displayOrder: integer("display_order").default(0).notNull(),
     subcategoryOrder: integer("subcategory_order").default(0).notNull(),
     subsubcategoryOrder: integer("subsubcategory_order").default(0).notNull(),
+
+    // New product fields
+    guarantee: integer("guarantee").default(0).notNull(), // Guarantee period (in months/years)
+    estimatedDeliveryMaxDays: integer("estimated_delivery_max_days").default(7).notNull(), // Maximum estimated delivery time in days
+    disponibility: disponibilityEnum("disponibility").default("available").notNull(), // Product availability status
+
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
   }
