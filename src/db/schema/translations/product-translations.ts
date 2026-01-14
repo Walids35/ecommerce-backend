@@ -25,6 +25,7 @@ export const productTranslations = pgTable(
     language: varchar("language", { length: 2 }).notNull(), // 'fr' or 'ar'
     name: varchar("name", { length: 200 }).notNull(),
     description: text("description"),
+    detailedDescription: text("detailed_description"),
     datasheet: text("datasheet"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),

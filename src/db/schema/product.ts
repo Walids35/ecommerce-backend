@@ -18,6 +18,8 @@ export const products = pgTable(
     id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
     name: varchar("name", { length: 200 }).notNull(),
     description: text("description"),
+    slug: varchar("slug", { length: 200 }).unique(),
+    detailedDescription: text("detailed_description"),
     price: numeric("price", { precision: 10, scale: 2 }).notNull(),
     stock: integer("stock").default(0).notNull(),
     discountPercentage: numeric("discount_percentage", { precision: 5, scale: 2 }).default("0"),

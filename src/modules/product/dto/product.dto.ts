@@ -1,9 +1,10 @@
 import { z } from "zod";
 
-// Translation schema for product (name, description, datasheet)
+// Translation schema for product (name, description, detailedDescription, datasheet)
 const ProductTranslationSchema = z.object({
   name: z.string().min(1),
   description: z.string().optional(),
+  detailedDescription: z.string().optional(),
   datasheet: z.string().optional(),
 });
 
@@ -13,6 +14,11 @@ const disponibilitySchema = z.enum(["available", "on_request", "out_of_stock"]);
 export const CreateProductInput = z.object({
   name: z.string().min(1),
   description: z.string().optional(),
+  slug: z.string()
+    .min(1, "Slug is required")
+    .regex(/^[a-z0-9-]+$/, "Slug must be lowercase alphanumeric with hyphens only")
+    .transform(val => val.toLowerCase()),
+  detailedDescription: z.string().optional(),
   price: z.string(),
   stock: z.number().int().nonnegative(),
   discountPercentage: z.string().optional(),
@@ -61,6 +67,12 @@ export const CreateProductInput = z.object({
 export const UpdateProductInput = z.object({
   name: z.string().optional(),
   description: z.string().optional(),
+  slug: z.string()
+    .min(1)
+    .regex(/^[a-z0-9-]+$/, "Slug must be lowercase alphanumeric with hyphens only")
+    .transform(val => val.toLowerCase())
+    .optional(),
+  detailedDescription: z.string().optional(),
   price: z.string().optional(),
   stock: z.number().int().nonnegative().optional(),
   discountPercentage: z.string().optional(),

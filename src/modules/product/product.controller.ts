@@ -23,6 +23,11 @@ export class ProductController {
     sendSuccess(res, product, "Product retrieved successfully");
   }
 
+  async findBySlug(req: Request, res: Response) {
+    const product = await service.findBySlug(req.language, req.params.slug);
+    sendSuccess(res, product, "Product retrieved successfully");
+  }
+
   async update(req: Request, res: Response) {
     const parsed = UpdateProductInput.parse(req.body);
     const updated = await service.update(req.language, req.params.id, parsed);

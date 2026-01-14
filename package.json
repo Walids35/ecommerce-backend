@@ -30,6 +30,7 @@
     "pdfkit": "^0.17.2",
     "pg": "^8.16.3",
     "resend": "^6.5.2",
+    "sanitize-html": "^2.17.0",
     "zod": "^4.1.12"
   },
   "devDependencies": {
@@ -44,6 +45,7 @@
     "@types/node": "^24.10.1",
     "@types/pdfkit": "^0.17.4",
     "@types/pg": "^8.15.6",
+    "@types/sanitize-html": "^2.16.0",
     "drizzle-kit": "^0.31.7",
     "ts-node-dev": "^2.0.0",
     "tsx": "^4.20.6",

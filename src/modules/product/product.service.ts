@@ -17,9 +17,21 @@ import { productTranslations } from "../../db/schema/translations/product-transl
 import { attributeTranslations } from "../../db/schema/translations/attribute-translations";
 import { attributeValueTranslations } from "../../db/schema/translations/attribute-value-translations";
 import { SupportedLanguage } from "../../middlewares/language";
-import { NotFoundError, BadRequestError } from "../../utils/errors";
+import { NotFoundError, BadRequestError, ConflictError } from "../../utils/errors";
+import sanitizeHtml from "sanitize-html";
 
 export class ProductService {
+  // ---------------------------
+  // HTML SANITIZATION HELPER
+  // ---------------------------
+  private sanitizeHtmlContent(html: string | undefined): string | undefined {
+    if (!html) return html;
+    return sanitizeHtml(html, {
+      allowedTags: ['p', 'strong', 'em', 'ul', 'ol', 'li', 'a', 'h2', 'h3', 'br', 'span', 'div'],
+      allowedAttributes: { 'a': ['href', 'target'] },
+    });
+  }
+
   // ---------------------------
   // CREATE PRODUCT
   // ---------------------------
@@ -80,12 +92,28 @@ export class ProductService {
       }
     }
 
+    // Validate slug uniqueness
+    const existingSlug = await db
+      .select()
+      .from(products)
+      .where(eq(products.slug, data.slug))
+      .limit(1);
+
+    if (existingSlug.length > 0) {
+      throw new ConflictError("Slug already exists. Please choose a different slug.");
+    }
+
+    // Sanitize HTML content
+    const sanitizedDetailedDescription = this.sanitizeHtmlContent(data.detailedDescription);
+
     // Insert base product
     const [created] = await db
       .insert(products)
       .values({
         name: data.name,
         description: data.description,
+        slug: data.slug,
+        detailedDescription: sanitizedDetailedDescription,
         price: data.price,
         stock: data.stock,
         discountPercentage: data.discountPercentage ?? "0",
@@ -115,6 +143,7 @@ export class ProductService {
             language: lang,
             name: trans.name,
             description: trans.description,
+            detailedDescription: this.sanitizeHtmlContent(trans.detailedDescription),
             datasheet: trans.datasheet,
           });
         }
@@ -336,6 +365,7 @@ export class ProductService {
       .select({
         // Base product fields (language-agnostic)
         id: products.id,
+        slug: products.slug,
         price: products.price,
         stock: products.stock,
         discountPercentage: products.discountPercentage,
@@ -362,6 +392,11 @@ export class ProductService {
           pt_requested.description,
           pt_fallback.description,
           ${products.description}
+        )`,
+        detailedDescription: sql<string>`COALESCE(
+          pt_requested.detailed_description,
+          pt_fallback.detailed_description,
+          ${products.detailedDescription}
         )`,
         datasheet: sql<string>`COALESCE(
           pt_requested.datasheet,
@@ -479,6 +514,7 @@ export class ProductService {
       .select({
         // Base product fields
         id: products.id,
+        slug: products.slug,
         price: products.price,
         stock: products.stock,
         discountPercentage: products.discountPercentage,
@@ -498,6 +534,7 @@ export class ProductService {
         // Translated fields
         name: productTranslations.name,
         description: productTranslations.description,
+        detailedDescription: productTranslations.detailedDescription,
         datasheet: productTranslations.datasheet,
       })
       .from(products)
@@ -520,6 +557,7 @@ export class ProductService {
       .select({
         // Base product fields
         id: products.id,
+        slug: products.slug,
         price: products.price,
         stock: products.stock,
         discountPercentage: products.discountPercentage,
@@ -539,6 +577,7 @@ export class ProductService {
         // Translated fields
         name: productTranslations.name,
         description: productTranslations.description,
+        detailedDescription: productTranslations.detailedDescription,
         datasheet: productTranslations.datasheet,
       })
       .from(products)
@@ -594,10 +633,113 @@ export class ProductService {
         language: productTranslations.language,
         name: productTranslations.name,
         description: productTranslations.description,
+        detailedDescription: productTranslations.detailedDescription,
         datasheet: productTranslations.datasheet,
       })
       .from(productTranslations)
       .where(eq(productTranslations.productId, id));
+
+    return {
+      ...product,
+      attributes: attributeRows.map((row) => ({
+        attributeId: row.attributeId,
+        attributeName: row.attributeName,
+        attributeValueId: row.valueId,
+        value: row.value,
+      })),
+      translations: allTranslations,
+    };
+  }
+
+  // ---------------------------
+  // FIND BY SLUG
+  // ---------------------------
+  async findBySlug(language: SupportedLanguage, slug: string) {
+    const rows = await db
+      .select({
+        // Base product fields
+        id: products.id,
+        slug: products.slug,
+        price: products.price,
+        stock: products.stock,
+        discountPercentage: products.discountPercentage,
+        subCategoryId: products.subCategoryId,
+        subSubCategoryId: products.subSubCategoryId,
+        brandId: products.brandId,
+        images: products.images,
+        isActive: products.isActive,
+        displayOrder: products.displayOrder,
+        subcategoryOrder: products.subcategoryOrder,
+        subsubcategoryOrder: products.subsubcategoryOrder,
+        guarantee: products.guarantee,
+        estimatedDeliveryMaxDays: products.estimatedDeliveryMaxDays,
+        disponibility: products.disponibility,
+        createdAt: products.createdAt,
+        updatedAt: products.updatedAt,
+        // Translated fields
+        name: productTranslations.name,
+        description: productTranslations.description,
+        detailedDescription: productTranslations.detailedDescription,
+        datasheet: productTranslations.datasheet,
+      })
+      .from(products)
+      .innerJoin(
+        productTranslations,
+        and(
+          eq(productTranslations.productId, products.id),
+          eq(productTranslations.language, language)
+        )
+      )
+      .where(eq(products.slug, slug))
+      .limit(1);
+
+    if (!rows.length) throw new NotFoundError("Product not found");
+
+    const product = rows[0];
+
+    const attributeRows = await db
+      .select({
+        attributeId: attributes.id,
+        attributeName: attributeTranslations.name,
+        valueId: attributeValues.id,
+        value: attributeValueTranslations.value,
+      })
+      .from(productAttributeValues)
+      .innerJoin(
+        attributes,
+        eq(productAttributeValues.attributeId, attributes.id)
+      )
+      .innerJoin(
+        attributeTranslations,
+        and(
+          eq(attributeTranslations.attributeId, attributes.id),
+          eq(attributeTranslations.language, language)
+        )
+      )
+      .innerJoin(
+        attributeValues,
+        eq(productAttributeValues.attributeValueId, attributeValues.id)
+      )
+      .innerJoin(
+        attributeValueTranslations,
+        and(
+          eq(attributeValueTranslations.attributeValueId, attributeValues.id),
+          eq(attributeValueTranslations.language, language)
+        )
+      )
+      .where(eq(productAttributeValues.productId, product.id));
+
+    // Fetch all translations for this product
+    const allTranslations = await db
+      .select({
+        language: productTranslations.language,
+        name: productTranslations.name,
+        description: productTranslations.description,
+        detailedDescription: productTranslations.detailedDescription,
+        datasheet: productTranslations.datasheet,
+      })
+      .from(productTranslations)
+      .where(eq(productTranslations.productId, product.id));
 
     return {
       ...product,
@@ -630,12 +772,28 @@ export class ProductService {
       }
     }
 
+    // Validate slug uniqueness if being updated
+    if (data.slug !== undefined) {
+      const existingSlug = await db
+        .select()
+        .from(products)
+        .where(eq(products.slug, data.slug))
+        .limit(1);
+
+      if (existingSlug.length > 0 && existingSlug[0].id !== id) {
+        throw new ConflictError("Slug already exists. Please choose a different slug.");
+      }
+    }
+
     const payload: Record<string, any> = {
       updatedAt: new Date(),
     };
 
     if (data.name !== undefined) payload.name = data.name;
     if (data.description !== undefined) payload.description = data.description;
+    if (data.slug !== undefined) payload.slug = data.slug;
+    if (data.detailedDescription !== undefined)
+      payload.detailedDescription = this.sanitizeHtmlContent(data.detailedDescription);
     if (data.price !== undefined) payload.price = data.price;
     if (data.stock !== undefined) payload.stock = data.stock;
     if (data.discountPercentage !== undefined)
@@ -684,6 +842,7 @@ export class ProductService {
               .set({
                 name: trans.name,
                 description: trans.description,
+                detailedDescription: this.sanitizeHtmlContent(trans.detailedDescription),
                 datasheet: trans.datasheet,
                 updatedAt: new Date(),
               })
@@ -700,6 +859,7 @@ export class ProductService {
               language: lang,
               name: trans.name,
               description: trans.description,
+              detailedDescription: this.sanitizeHtmlContent(trans.detailedDescription),
               datasheet: trans.datasheet,
             });
           }
@@ -841,6 +1001,7 @@ export class ProductService {
       .select({
         // Base product fields
         id: products.id,
+        slug: products.slug,
         price: products.price,
         stock: products.stock,
         discountPercentage: products.discountPercentage,
@@ -860,6 +1021,7 @@ export class ProductService {
         // Translated fields
         name: productTranslations.name,
         description: productTranslations.description,
+        detailedDescription: productTranslations.detailedDescription,
         datasheet: productTranslations.datasheet,
       })
       .from(products)
@@ -1035,6 +1197,7 @@ export class ProductService {
       .select({
         // Base product fields
         id: products.id,
+        slug: products.slug,
         price: products.price,
         stock: products.stock,
         discountPercentage: products.discountPercentage,
@@ -1054,6 +1217,7 @@ export class ProductService {
         // Translated fields
         name: productTranslations.name,
         description: productTranslations.description,
+        detailedDescription: productTranslations.detailedDescription,
         datasheet: productTranslations.datasheet,
       })
       .from(products)

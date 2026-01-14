@@ -16,6 +16,7 @@ router.delete("/:id", verifyJWT, requireStaff, asyncHandler(controller.delete.bi
 // Public endpoints (no auth required)
 router.get("/", asyncHandler(controller.findAllWithSearch.bind(controller)));
 router.get("/discounted", asyncHandler(controller.findDiscountedProducts.bind(controller)));
+router.get("/slug/:slug", asyncHandler(controller.findBySlug.bind(controller)));
 router.get("/:id", asyncHandler(controller.findById.bind(controller)));
 router.post("/filter", asyncHandler(controller.filterProducts.bind(controller)));
 
