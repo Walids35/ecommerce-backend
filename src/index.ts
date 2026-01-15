@@ -16,7 +16,6 @@ import orderRoutes from './modules/order/order.routes';
 import analyticsRoutes from './modules/analytics/analytics.routes';
 import collectionRoutes from './modules/collection/collection.routes';
 import brandRoutes from './modules/brand/brand.routes';
-import { seedDatabase } from './db/database-seeding';
 import cookieParser from 'cookie-parser';
 import { verifyJWT, requireStaff } from "./middlewares/auth";
 import { detectLanguage } from './middlewares/language';
